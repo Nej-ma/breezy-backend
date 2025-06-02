@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  breezy-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    container_name: breezy-backend-prod
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    env_file:
+      - .env
+    depends_on:
+      - mongodb
+    volumes:
+      - ./uploads:/app/uploads
+    networks:
+      - breezy-network
+
+  mongodb:
+    image: mongo:7.0
+    container_name: breezy-mongodb-prod
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
+      - MONGO_INITDB_DATABASE=${MONGO_DATABASE}
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - breezy-network
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: breezy-redis-prod
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - breezy-network
+
+volumes:
+  mongodb_data:
+  redis_data:
+
+networks:
+  breezy-network:
+    driver: bridge

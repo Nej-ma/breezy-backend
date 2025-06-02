@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  breezy-backend-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: breezy-backend-dev
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    env_file:
+      - .env.dev
+    depends_on:
+      - mongodb-dev
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - ./uploads:/app/uploads
+    networks:
+      - breezy-dev-network
+
+  mongodb-dev:
+    image: mongo:7.0
+    container_name: breezy-mongodb-dev
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=${MONGO_DATABASE}
+    volumes:
+      - mongodb_dev_data:/data/db
+    networks:
+      - breezy-dev-network
+
+  redis-dev:
+    image: redis:7.2-alpine
+    container_name: breezy-redis-dev
+    ports:
+      - "6379:6379"
+    networks:
+      - breezy-dev-network
+
+volumes:
+  mongodb_dev_data:
+
+networks:
+  breezy-dev-network:
+    driver: bridge
