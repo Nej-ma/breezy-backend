@@ -48,6 +48,24 @@ services:
     networks:
       - breezy-network
 
+  mongo-express:
+    image: mongo-express:1.0.2
+    container_name: breezy-mongo-express-prod
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+      - ME_CONFIG_MONGODB_PORT=27017
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=${MONGO_ROOT_USERNAME}
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGO_ROOT_PASSWORD}
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=${MONGO_EXPRESS_PASSWORD}
+    depends_on:
+      - mongodb
+    networks:
+      - breezy-network
+
 volumes:
   mongodb_data:
   redis_data:
