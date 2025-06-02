@@ -32,12 +32,27 @@ services:
       - mongodb_dev_data:/data/db
     networks:
       - breezy-dev-network
-
+  
   redis-dev:
     image: redis:7.2-alpine
     container_name: breezy-redis-dev
     ports:
       - "6379:6379"
+    networks:
+      - breezy-dev-network
+
+  mongo-express-dev:
+    image: mongo-express:1.0.2
+    container_name: breezy-mongo-express-dev
+    ports:
+      - "8081:8081"
+    environment:
+      - ME_CONFIG_MONGODB_SERVER=mongodb-dev
+      - ME_CONFIG_MONGODB_PORT=27017
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=admin123
+    depends_on:
+      - mongodb-dev
     networks:
       - breezy-dev-network
 
