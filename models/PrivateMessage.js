@@ -20,7 +20,7 @@ const privateMessageSchema = new mongoose.Schema({
     type: String
   }],
   isRead: {
-    type: Boolean,
+      type: Boolean,
     default: false
   },
   isDeleted: {
