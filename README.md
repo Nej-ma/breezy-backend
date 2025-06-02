@@ -18,5 +18,5 @@
     docker-compose up (--build to build dependencies)
     ```
 3. Access the application:
-    - API: `http://localhost:3000`
+    - API: `http://localhost:3001`
 
