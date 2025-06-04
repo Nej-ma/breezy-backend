@@ -38,8 +38,10 @@ validateEmail = async (req, res) => {
             return res.status(400).json({ error: 'Invalid or expired token' });
         }
         
-        user.token = '';
+        user.verificationToken = '';
         user.verificationTokenExpires = null;
+
+        await user.save();
 
         res.status(200).json({ message: 'Email validated successfully' });
     } catch (error) {

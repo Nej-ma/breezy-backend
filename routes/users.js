@@ -56,15 +56,22 @@ router.post('/', controllers.createAccount);
 /**
  * @swagger
  * /users/activate/{token}:
- *  post:
- *      summary: Activate user account with verification token
- *      description: This endpoint allows users to activate their account using a verification token sent via email.
- *      responses:
- *         200:
- *            description: User account activated successfully
- *         400:
- *            description: Bad request, invalid or expired token
+ *   post:
+ *     summary: Activate user account with verification token
+ *     description: This endpoint allows users to activate their account using a verification token sent via email.
+ *     parameters:
+ *       - in: path
+ *         name: token
+ *         required: true
+ *         description: The verification token sent to the user's email
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User account activated successfully
+ *       400:
+ *         description: Bad request, invalid or expired token
  */
-router.post("/activate/:token", controllers.createAccount);
+router.post("/activate/:token", controllers.validateEmail);
 
 module.exports = router;

@@ -15,7 +15,7 @@ sendConfirmationEmail = async (email, token) => {
     const confirmationUrl = `${process.env.FRONTEND_URL}/confirm-email?token=${token}`;
     
     const mailOptions = {
-        from: `"Breezy" <${process.env.SMTP_USER}>`, // sender address
+        from: `"${process.env.APP_NAME}" <${process.env.SMTP_USER}>`, // sender address
         to: email, // list of receivers
         subject: 'Email Confirmation', // Subject line
         text: `Please confirm your email by clicking the following link: ${confirmationUrl}`, // plain text body
@@ -27,7 +27,7 @@ sendConfirmationEmail = async (email, token) => {
         console.log('Confirmation email sent successfully');
     } catch (error) {
         console.error('Error sending confirmation email:', error);
-        throw new Error('Failed to send confirmation email');
+        throw new Error('Failed to send confirmation email to ' + `"${process.env.APP_NAME}" <${process.env.SMTP_USER}>`);
     }
 }
 
