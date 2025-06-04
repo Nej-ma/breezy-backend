@@ -17,7 +17,7 @@ RUN npm install
 RUN mkdir -p uploads
 
 # Expose port
-EXPOSE 3000
+EXPOSE 3001
 
 # Start application with nodemon for hot reload
 CMD ["npm", "run", "dev"]
