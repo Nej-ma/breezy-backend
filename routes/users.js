@@ -3,9 +3,7 @@ var router = express.Router();
 var controllers = require('../controllers/users.controllers');
 
 /* GET users listing. */
-router.get('/', function(req, res, next) {
-  res.send('respond with a resource');
-});
+router.get('/', controllers.getUsers);
 
 /**
  * @swagger
@@ -52,6 +50,54 @@ router.get('/', function(req, res, next) {
  *         description: Bad request
  */
 router.post('/', controllers.createAccount);
+
+/**
+ * @swagger
+ * /users/{id}:
+ *   get:
+ *     summary: Retrieve a user by ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The ID of the user to retrieve
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 username:
+ *                   type: string
+ *                 displayName:
+ *                   type: string
+ *                 email:
+ *                   type: string
+ *                 bio:
+ *                   type: string
+ *                 profilePicture:
+ *                   type: string
+ *                 coverPicture:
+ *                   type: string
+ *                 followersCount:
+ *                   type: integer
+ *                 followingCount:
+ *                   type: integer
+ *                 postsCount:
+ *                   type: integer
+ *                 createdAt:
+ *                   type: string
+ *                   format: date-time
+ *       404:
+ *         description: User not found
+ */
+router.get('/:id', controllers.getUserById);
 
 /**
  * @swagger
