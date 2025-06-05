@@ -49,8 +49,37 @@ validateEmail = async (req, res) => {
     }
 }
 
+// Get user by ID
+getUserById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = await User.findById(id).select('-password -verificationToken -verificationTokenExpires -__v -updatedAt');
+        if (!user) {
+            return res.status(404).json({ message: 'Utilisateur non trouvé' });
+        }
+        res.json(user);
+    } catch (err) {
+        res.status(500).json({ message: 'Erreur serveur' });
+    }
+}
+
+// Get all users
+getUsers = async (req, res) => {
+    try {
+        const users = await User.find().select('-password -verificationToken -verificationTokenExpires -__v -updatedAt');
+        if (!users || users.length === 0) {
+            return res.status(404).json({ message: 'Aucun utilisateur trouvé' });
+        }
+        res.json(users);
+    } catch (err) {
+        res.status(500).json({ message: 'Erreur serveur' });
+    }
+}
+
 // export 
 module.exports = {
     createAccount,
-    validateEmail
+    validateEmail,
+    getUsers, 
+    getUserById
 };
