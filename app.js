@@ -14,12 +14,13 @@ const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 
-// Import mongoose
-const mongoose = require('mongoose');
+// Import database configuration
+const connectDB = require('./config/database');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var postsRouter = require('./routes/posts');
+var authRouter = require('./routes/auth');
 
 var app = express();
 
@@ -54,21 +55,6 @@ const swaggerSpec = swaggerJsdoc(swaggerOptions);
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// MongoDB connection setup
-mongoose.set('strictQuery', false);
-const mongoDB = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/breezy_database';
-
-// Connect to MongoDB
-async function connectDB() {
-  try {
-    await mongoose.connect(mongoDB);
-    console.log('Connected to MongoDB successfully');
-  } catch (error) {
-    console.error('MongoDB connection error:', error);
-    process.exit(1);
-  }
-}
-
 // Initialize database connection
 connectDB();
 
@@ -85,8 +71,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/posts', postsRouter);
-
-
+app.use('/auth', authRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
