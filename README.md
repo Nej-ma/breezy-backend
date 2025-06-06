@@ -20,3 +20,8 @@
 3. Access the application:
     - API: `http://localhost:3001`
 
+### Testing
+- Run tests using:
+    ```bash
+    docker exec breezy-backend-dev npm run test
+    ```
