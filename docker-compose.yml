@@ -1,64 +1,222 @@
-version: '3.8'
-
 services:
-  breezy-backend-dev:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: breezy-backend-dev
-    ports:
-      - "3001:3001"
-    environment:
-      - NODE_ENV=development
-    env_file:
-      - .env.dev
-    depends_on:
-      - mongodb-dev
-    volumes:
-      - .:/app
-      - /app/node_modules
-      - ./uploads:/app/uploads
-    networks:
-      - breezy-dev-network
-
-  mongodb-dev:
-    image: mongo:7.0
-    container_name: breezy-mongodb-dev
-    ports:
-      - "27017:27017"
-    environment:
-      - MONGO_INITDB_DATABASE=${MONGO_DATABASE}
-    volumes:
-      - mongodb_dev_data:/data/db
-    networks:
-      - breezy-dev-network
+  # =============
+  # DATABASES
+  # =============
   
-  redis-dev:
-    image: redis:7.2-alpine
-    container_name: breezy-redis-dev
-    ports:
-      - "6379:6379"
-    networks:
-      - breezy-dev-network
-
-  mongo-express-dev:
-    image: mongo-express:1.0.2
-    container_name: breezy-mongo-express-dev
-    ports:
-      - "8081:8081"
+  # Base de données pour Auth Service
+  mongodb-auth:
+    image: mongo:7.0
+    container_name: breezy-mongodb-auth
+    restart: unless-stopped
     environment:
-      - ME_CONFIG_MONGODB_SERVER=mongodb-dev
-      - ME_CONFIG_MONGODB_PORT=27017
-      - ME_CONFIG_BASICAUTH_USERNAME=admin
-      - ME_CONFIG_BASICAUTH_PASSWORD=admin123
-    depends_on:
-      - mongodb-dev
+      - MONGO_INITDB_DATABASE=breezy_auth
+    volumes:
+      - mongodb_auth_data:/data/db
     networks:
-      - breezy-dev-network
+      - breezy-microservices-network
+
+  # Base de données pour User Service
+  mongodb-user:
+    image: mongo:7.0
+    container_name: breezy-mongodb-user
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_DATABASE=breezy_users
+    volumes:
+      - mongodb_user_data:/data/db
+    networks:
+      - breezy-microservices-network
+
+  # Base de données pour Post Service
+  mongodb-post:
+    image: mongo:7.0
+    container_name: breezy-mongodb-post
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_DATABASE=breezy_posts
+    volumes:
+      - mongodb_post_data:/data/db
+    networks:
+      - breezy-microservices-network
+
+  # Base de données pour Notification Service
+  mongodb-notification:
+    image: mongo:7.0
+    container_name: breezy-mongodb-notification
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_DATABASE=breezy_notifications
+    volumes:
+      - mongodb_notification_data:/data/db
+    networks:
+      - breezy-microservices-network
+
+  # Redis pour le cache et les sessions
+  redis:
+    image: redis:7.2-alpine
+    container_name: breezy-redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks:
+      - breezy-microservices-network
+
+  # =============
+  # MICROSERVICES
+  # =============
+
+  # Auth Service
+  auth-service:
+    build:
+      context: ./microservices/auth-service
+      dockerfile: docker/Dockerfile
+    container_name: breezy-auth-service
+    restart: unless-stopped
+    ports:
+      - "${AUTH_SERVICE_PORT:-3001}:${AUTH_SERVICE_PORT:-3001}"
+    env_file:
+      - ./microservices/auth-service/.env
+    environment:
+      - MONGODB_URI=mongodb://mongodb-auth:27017/breezy_auth
+    depends_on:
+      - mongodb-auth
+    volumes:
+      - ./microservices/auth-service:/app
+      - /app/node_modules
+    networks:
+      - breezy-microservices-network
+
+  # User Service
+  user-service:
+    build:
+      context: ./microservices/user-service
+      dockerfile: docker/Dockerfile
+    container_name: breezy-user-service
+    restart: unless-stopped
+    ports:
+      - "${USER_SERVICE_PORT:-3002}:${USER_SERVICE_PORT:-3002}"
+    env_file:
+      - ./microservices/user-service/.env
+    environment:
+      - MONGODB_URI=mongodb://mongodb-user:27017/breezy_users
+      - AUTH_SERVICE_URL=http://auth-service:${AUTH_SERVICE_PORT:-3001}
+    depends_on:
+      - mongodb-user
+      - auth-service
+    volumes:
+      - ./microservices/user-service:/app
+      - /app/node_modules
+    networks:
+      - breezy-microservices-network
+
+  # Post Service
+  post-service:
+    build:
+      context: ./microservices/post-service
+      dockerfile: docker/Dockerfile
+    container_name: breezy-post-service
+    restart: unless-stopped
+    ports:
+      - "${POST_SERVICE_PORT:-3003}:${POST_SERVICE_PORT:-3003}"
+    env_file:
+      - ./microservices/post-service/.env
+    environment:
+      - MONGODB_URI=mongodb://mongodb-post:27017/breezy_posts
+      - AUTH_SERVICE_URL=http://auth-service:${AUTH_SERVICE_PORT:-3001}
+      - USER_SERVICE_URL=http://user-service:${USER_SERVICE_PORT:-3002}
+    depends_on:
+      - mongodb-post
+      - auth-service
+      - user-service
+    volumes:
+      - ./microservices/post-service:/app
+      - /app/node_modules
+    networks:
+      - breezy-microservices-network
+
+  # Notification Service
+  notification-service:
+    build:
+      context: ./microservices/notification-service
+      dockerfile: docker/Dockerfile
+    container_name: breezy-notification-service
+    restart: unless-stopped
+    ports:
+      - "${NOTIFICATION_SERVICE_PORT:-3004}:${NOTIFICATION_SERVICE_PORT:-3004}"
+    env_file:
+      - ./microservices/notification-service/.env
+    environment:
+      - MONGODB_URI=mongodb://mongodb-notification:27017/breezy_notifications
+      - AUTH_SERVICE_URL=http://auth-service:${AUTH_SERVICE_PORT:-3001}
+      - USER_SERVICE_URL=http://user-service:${USER_SERVICE_PORT:-3002}
+      - POST_SERVICE_URL=http://post-service:${POST_SERVICE_PORT:-3003}
+    depends_on:
+      - mongodb-notification
+      - auth-service
+    volumes:
+      - ./microservices/notification-service:/app
+      - /app/node_modules
+    networks:
+      - breezy-microservices-network
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./microservices/api-gateway
+      dockerfile: docker/Dockerfile
+    container_name: breezy-api-gateway
+    restart: unless-stopped
+    ports:
+      - "${API_GATEWAY_PORT:-3000}:${API_GATEWAY_PORT:-3000}"
+    env_file:
+      - ./microservices/api-gateway/.env
+    environment:
+      - AUTH_SERVICE_URL=http://auth-service:${AUTH_SERVICE_PORT:-3001}
+      - USER_SERVICE_URL=http://user-service:${USER_SERVICE_PORT:-3002}
+      - POST_SERVICE_URL=http://post-service:${POST_SERVICE_PORT:-3003}
+      - NOTIFICATION_SERVICE_URL=http://notification-service:${NOTIFICATION_SERVICE_PORT:-3004}
+    depends_on:
+      - auth-service
+      - user-service
+      - post-service
+      - notification-service
+    volumes:
+      - ./microservices/api-gateway:/app
+      - /app/node_modules
+    networks:
+      - breezy-microservices-network
+
+  # =============
+  # MONITORING
+  # =============
+
+  # MongoDB Express pour la gestion des bases de données
+  mongo-express:
+    image: mongo-express:1.0.2
+    container_name: breezy-mongo-express
+    restart: unless-stopped
+    ports:
+      - "${MONGO_EXPRESS_PORT:-8081}:8081"
+    environment:
+      - ME_CONFIG_BASICAUTH_USERNAME=${MONGO_EXPRESS_USERNAME:-admin}
+      - ME_CONFIG_BASICAUTH_PASSWORD=${MONGO_EXPRESS_PASSWORD:-admin123}
+      - ME_CONFIG_MONGODB_SERVER=mongodb-auth,mongodb-user,mongodb-post,mongodb-notification
+      - ME_CONFIG_MONGODB_PORT=27017
+    depends_on:
+      - mongodb-auth
+      - mongodb-user
+      - mongodb-post
+      - mongodb-notification
+    networks:
+      - breezy-microservices-network
 
 volumes:
-  mongodb_dev_data:
+  mongodb_auth_data:
+  mongodb_user_data:
+  mongodb_post_data:
+  mongodb_notification_data:
+  redis_data:
 
 networks:
-  breezy-dev-network:
+  breezy-microservices-network:
     driver: bridge

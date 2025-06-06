@@ -1,7 +1,35 @@
-.env
+﻿# Dependencies
 node_modules/
-dist/
-coverage/
-.vscode/
-.DS_Store
+npm-debug.log*
 package-lock.json
+
+# Environment variables
+.env
+.env.local
+microservices/*/.env
+microservices/*/.env.local
+
+# Logs
+logs
+*.log
+
+# Coverage
+coverage/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads
+uploads/*
+microservices/*/uploads/*
+
+# Build
+dist/
+build/
+microservices/*/dist/*
+microservices/*/build/*

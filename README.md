@@ -1,27 +1,47 @@
-# Breezy backend
+﻿# Breezy - Architecture Microservices
 
-## This is the backend for the Breezy application, which provides APIs and services to support the frontend.
+Une plateforme sociale moderne construite avec une architecture microservices.
 
-## Getting Started
-### Prerequisites
-- Docker and Docker Compose
-- Node.js (for development)
+## Architecture
 
-### Installation
-1. Clone the repository:
-   ```bash
-   git clone <repository-url>
-    cd breezy-backend
-    ```
-2. Start the Docker image:
-    ```bash
-    docker-compose up (--build to build dependencies)
-    ```
-3. Access the application:
-    - API: `http://localhost:3001`
+Notre application est divisee en 5 microservices independants :
 
-### Testing
-- Run tests using:
-    ```bash
-    docker exec breezy-backend-dev npm run test
-    ```
+### Auth Service (Port 3001)
+* Authentification et autorisation
+* Gestion des tokens JWT
+* Reset de mot de passe
+* Verification d'email
+
+### User Service (Port 3002)
+* Gestion des profils utilisateurs
+* Systeme de suivi (follow/unfollow)
+* Validation des comptes
+
+### Post Service (Port 3003)
+* Creation et gestion des posts
+* Systeme de commentaires
+* Systeme de likes
+* Gestion des tags
+
+### Notification Service (Port 3004)
+* Notifications en temps reel
+* Messages prives
+* Alertes systeme
+
+### API Gateway (Port 3000)
+* Point d'entree unique
+* Routage des requetes
+* Authentification centralisee
+* Rate limiting
+
+## Demarrage Rapide
+Pour demarrer l'application, utilisez Docker Compose :
+
+```bash
+docker-compose up --build
+```
+## Tests
+Pour executer les tests, utilisez la commande suivante :
+```bash
+docker exec [container_name] npm test
+```
