@@ -1,7 +1,7 @@
-const Post = require('../models/Post');
-const Tag =  require('../models/Tag');
+import Post from '../models/Post.js';
+import Tag from '../models/Tag.js';
 
-publishPost = async (req, res) => {
+const publishPost = async (req, res) => {
     try {
         const { author, content, images, videos, tags, mentions, visibility } = req.body;
     
@@ -32,7 +32,7 @@ publishPost = async (req, res) => {
     }
 }
 
-getPosts = async (req, res) => {
+const getPosts = async (req, res) => {
     try {
         const posts = await Post.find({ isDeleted: false })
             .populate('author', 'username profilePicture')
@@ -45,7 +45,7 @@ getPosts = async (req, res) => {
     }
 }
 
-getPost = async (req, res) => {
+const getPost = async (req, res) => {
     try {
         const postId = req.params.id;
     
@@ -65,7 +65,7 @@ getPost = async (req, res) => {
     }
 }
 
-updatePost = async (req, res) => {
+const updatePost = async (req, res) => {
     try {
         const postId = req.params.id;
         const { content, images, videos, tags, mentions, visibility } = req.body;
@@ -95,7 +95,7 @@ updatePost = async (req, res) => {
     }
 }
 
-deletePost = async (req, res) => {
+const deletePost = async (req, res) => {
     try {
         const postId = req.params.id;
     
@@ -110,7 +110,7 @@ deletePost = async (req, res) => {
     }
 }
 
-module.exports = {
+export {
     publishPost,
     getPosts,
     getPost,

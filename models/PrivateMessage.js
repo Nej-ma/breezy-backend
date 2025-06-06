@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const privateMessageSchema = new mongoose.Schema({
   sender: {
@@ -52,4 +52,6 @@ privateMessageSchema.pre('save', function(next) {
 privateMessageSchema.index({ conversation: 1, createdAt: -1 });
 privateMessageSchema.index({ recipient: 1, isRead: 1 });
 
-module.exports = mongoose.model('PrivateMessage', privateMessageSchema);
+const PrivateMessage = mongoose.model('PrivateMessage', privateMessageSchema);
+
+export default PrivateMessage;

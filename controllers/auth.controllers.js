@@ -1,6 +1,6 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
-const { sendPasswordResetEmail } = require('../services/email');
+import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
+import { sendPasswordResetEmail } from '../services/email.js';
 
 // Generate JWT token
 const generateToken = (userId) => {
@@ -231,7 +231,7 @@ const resetPassword = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
   login,
   logout,
   refreshToken,

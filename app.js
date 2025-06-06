@@ -1,28 +1,29 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
-const swaggerUi = require('swagger-ui-express');
-const swaggerJsdoc = require('swagger-jsdoc');
+import createError from 'http-errors';
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import cookieParser from 'cookie-parser';
+import logger from 'morgan';
+import swaggerUi from 'swagger-ui-express';
+import swaggerJsdoc from 'swagger-jsdoc';
+import dotenv from 'dotenv';
+import helmet from 'helmet';
+import cors from 'cors';
+import rateLimit from 'express-rate-limit';
+import connectDB from './config/database.js';
+import indexRouter from './routes/index.js';
+import usersRouter from './routes/users.js';
+import postsRouter from './routes/posts.js';
+import authRouter from './routes/auth.js';
+
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load environment variables
-require('dotenv').config();
+dotenv.config();
 
-// Import security middleware
-const helmet = require('helmet');
-const cors = require('cors');
-const rateLimit = require('express-rate-limit');
-
-// Import database configuration
-const connectDB = require('./config/database');
-
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
-var postsRouter = require('./routes/posts');
-var authRouter = require('./routes/auth');
-
-var app = express();
+const app = express();
 
 // Security middleware
 app.use(helmet());
@@ -89,4 +90,4 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
-module.exports = app;
+export default app;

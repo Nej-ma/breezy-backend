@@ -1,8 +1,8 @@
-// test/auth.test.js
-const request = require('supertest');
-const mongoose = require('mongoose');
-const app = require('../app');
-const User = require('../models/User');
+import request from 'supertest';
+import mongoose from 'mongoose';
+import app from '../app.js';
+import User from '../models/User.js';
+import jwt from 'jsonwebtoken';
 
 // Utilisateur de test
 const testUser = {
@@ -261,7 +261,6 @@ describe('Tests d\'authentification', () => {
     });
 
     // Créer un vrai JWT token expiré
-    const jwt = require('jsonwebtoken');
     const expiredToken = jwt.sign({ userId: expiredUser._id }, process.env.JWT_SECRET, {
       expiresIn: '-1h' // Token expiré depuis 1 heure
     });

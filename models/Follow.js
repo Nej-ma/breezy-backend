@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const followSchema = new mongoose.Schema({
   follower: {
@@ -31,4 +31,6 @@ followSchema.pre('save', function(next) {
   next();
 });
 
-module.exports = mongoose.model('Follow', followSchema);
+const Follow = mongoose.model('Follow', followSchema);
+
+export default Follow;

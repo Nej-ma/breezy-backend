@@ -1,4 +1,4 @@
-const nodeMailer = require('nodemailer');
+import nodeMailer from 'nodemailer';
 
 // Create a transporter object using SMTP transport
 const transporter = nodeMailer.createTransport({
@@ -11,7 +11,7 @@ const transporter = nodeMailer.createTransport({
   }
 });
 
-sendConfirmationEmail = async (email, token) => {
+const sendConfirmationEmail = async (email, token) => {
     const confirmationUrl = `${process.env.FRONTEND_URL}/confirm-email?token=${token}`;
     
     const mailOptions = {
@@ -57,7 +57,7 @@ const sendPasswordResetEmail = async (email, token) => {
     }
 };
 
-module.exports = {
+export {
     sendConfirmationEmail,
     sendPasswordResetEmail
 };
