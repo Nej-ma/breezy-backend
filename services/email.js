@@ -31,6 +31,33 @@ sendConfirmationEmail = async (email, token) => {
     }
 }
 
+const sendPasswordResetEmail = async (email, token) => {
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+    
+    const mailOptions = {
+        from: `"${process.env.APP_NAME}" <${process.env.SMTP_USER}>`,
+        to: email,
+        subject: 'Password Reset Request',
+        text: `You requested a password reset. Please click the following link to reset your password: ${resetUrl}`,
+        html: `
+            <p>You requested a password reset.</p>
+            <p>Please click the following link to reset your password:</p>
+            <a href="${resetUrl}">Reset Password</a>
+            <p>This link will expire in 1 hour.</p>
+            <p>If you didn't request this, please ignore this email.</p>
+        `
+    };
+    
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log('Password reset email sent successfully');
+    } catch (error) {
+        console.error('Error sending password reset email:', error);
+        throw new Error('Failed to send password reset email');
+    }
+};
+
 module.exports = {
-    sendConfirmationEmail
+    sendConfirmationEmail,
+    sendPasswordResetEmail
 };

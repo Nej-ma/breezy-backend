@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { sendPasswordResetEmail } = require('../services/email');
 
 // Generate JWT token
 const generateToken = (userId) => {
@@ -21,7 +22,7 @@ const login = async (req, res) => {
     const { email, password } = req.body;
 
     // Check if user exists
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email }).select('+password'); 
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -154,9 +155,87 @@ const getCurrentUser = async (req, res) => {
   }
 };
 
+// Forgot password
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Generate reset token
+    const resetToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+      expiresIn: '1h'
+    });
+
+    // Save token and expiration to user
+    user.passwordResetToken = resetToken;
+    user.passwordResetExpires = Date.now() + 3600000; // 1 hour
+    await user.save();
+
+    // Send password reset email
+    await sendPasswordResetEmail(user.email, resetToken);
+
+    res.status(200).json({
+      message: 'Password reset email sent successfully'
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Reset password
+const resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({ error: 'Token and new password are required' });
+    }
+
+    let decoded;
+    try {
+      // Verify token
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (jwtError) {
+      if (jwtError.name === 'TokenExpiredError') {
+        return res.status(400).json({ error: 'Reset token expired' });
+      }
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+    
+    // Find user and check if token is still valid
+    const user = await User.findOne({
+      _id: decoded.userId,
+      passwordResetToken: token,
+      passwordResetExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ error: 'Invalid or expired reset token' });
+    }
+
+    // Update password
+    user.password = newPassword;
+    user.passwordResetToken = '';
+    user.passwordResetExpires = null;
+    await user.save();
+
+    res.status(200).json({ message: 'Password reset successful' });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 module.exports = {
   login,
   logout,
   refreshToken,
-  getCurrentUser
+  getCurrentUser,
+  forgotPassword,
+  resetPassword
 };
