@@ -1,6 +1,7 @@
-var express = require('express');
-var router = express.Router();
-var controllers = require('../controllers/users.controllers');
+import express from 'express';
+import * as controllers from '../controllers/users.controllers.js';
+
+const router = express.Router();
 
 /* GET users listing. */
 router.get('/', controllers.getUsers);
@@ -120,4 +121,4 @@ router.get('/:id', controllers.getUserById);
  */
 router.post("/activate/:token", controllers.validateEmail);
 
-module.exports = router;
+export default router;

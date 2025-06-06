@@ -1,8 +1,7 @@
-var express = require('express');
-var controllers = require('../controllers/posts.controllers');
+import express from 'express';
+import * as controllers from '../controllers/posts.controllers.js';
 
-
-var router = express.Router();
+const router = express.Router();
 
 //implémenter un middleware pour vérifier l'authentification
 router.post('/', controllers.publishPost); 
@@ -167,4 +166,4 @@ router.delete('/:id', controllers.deletePost);
  *         description: Post not found
  */
 
-module.exports = router;
+export default router;

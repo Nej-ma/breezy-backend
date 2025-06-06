@@ -1,9 +1,8 @@
-const { request } = require('../app');
-const User = require('../models/User');
-const emailService = require('../services/email');
+import User from '../models/User.js';
+import { sendConfirmationEmail } from '../services/email.js';
 
 // Create user account
-createAccount = async (req, res) => {
+const createAccount = async (req, res) => {
     try {
         const { username, displayName, email, password } = req.body;
 
@@ -21,7 +20,7 @@ createAccount = async (req, res) => {
         await newUser.save();
 
         // Send verification email
-        await emailService.sendConfirmationEmail(email, verificationToken);
+        await sendConfirmationEmail(email, verificationToken);
 
         res.status(201).json({ message: 'User created successfully' });
     } catch (error) {
@@ -30,7 +29,7 @@ createAccount = async (req, res) => {
 }
 
 // Validate email 
-validateEmail = async (req, res) => {
+const validateEmail = async (req, res) => {
     try {
         const {token} = req.params;
         const user = await User.findOne({ verificationToken: token, verificationTokenExpires: { $gt: new Date() } });
@@ -51,7 +50,7 @@ validateEmail = async (req, res) => {
 }
 
 // Get user by ID
-getUserById = async (req, res) => {
+const getUserById = async (req, res) => {
     try {
         const { id } = req.params;
         const user = await User.findById(id).select('-password -verificationToken -verificationTokenExpires -__v -updatedAt');
@@ -65,7 +64,7 @@ getUserById = async (req, res) => {
 }
 
 // Get all users
-getUsers = async (req, res) => {
+const getUsers = async (req, res) => {
     try {
         const users = await User.find().select('-password -verificationToken -verificationTokenExpires -__v -updatedAt');
         if (!users || users.length === 0) {
@@ -78,7 +77,7 @@ getUsers = async (req, res) => {
 }
 
 // export 
-module.exports = {
+export {
     createAccount,
     validateEmail,
     getUsers, 

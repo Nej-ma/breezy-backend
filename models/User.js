@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 
 // Define the User schema
 /**
@@ -194,4 +194,4 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
 };
 
 // Create and export the User model
-module.exports = mongoose.model('User', userSchema);
+export default mongoose.model('User', userSchema);

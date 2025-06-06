@@ -2,15 +2,24 @@
   "name": "breezy-backend",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "start": "node ./bin/www",
-    "dev": "nodemon --legacy-watch --polling-interval 1000 ./bin/www",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "test:auth": "jest tests/auth.test.js",
-    "test:verbose": "jest --verbose",
-    "test:silent": "jest --silent"
+    "start": "node ./bin/www.js",
+    "dev": "nodemon --legacy-watch --polling-interval 1000 ./bin/www.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
+    "test:auth": "node --experimental-vm-modules node_modules/jest/bin/jest.js tests/auth.test.js",
+    "test:verbose": "node --experimental-vm-modules node_modules/jest/bin/jest.js --verbose",
+    "test:silent": "node --experimental-vm-modules node_modules/jest/bin/jest.js --silent"
+  },
+  "jest": {
+    "extensionsToTreatAsEsm": [],
+    "globals": {
+      "__dirname": true
+    },
+    "transform": {},
+    "testEnvironment": "node"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -36,6 +45,7 @@
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^3.0.0",
     "mongodb-memory-server": "^10.1.4",
     "nodemon": "^3.0.2"
   }
