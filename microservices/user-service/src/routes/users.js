@@ -3,6 +3,7 @@ import * as controllers from '../controllers/users.controllers.js';
 
 const router = express.Router();
 
+
 /* GET users listing. */
 router.get('/', controllers.getUsers);
 
@@ -11,6 +12,7 @@ router.get('/', controllers.getUsers);
  * /users:
  *   get:
  *     summary: Retrieve a list of users
+ *     tags: [Users]
  *     responses:
  *       200:
  *         description: A list of users
@@ -29,6 +31,7 @@ router.get('/', controllers.getUsers);
  *                     type: string
  *   post:
  *     summary: Create a new user account
+ *     tags: [Users]
  *     requestBody:
  *       required: true
  *       content:
@@ -57,6 +60,7 @@ router.post('/', controllers.createAccount);
  * /users/{id}:
  *   get:
  *     summary: Retrieve a user by ID
+ *     tags: [Users]
  *     parameters:
  *       - in: path
  *         name: id
@@ -105,6 +109,7 @@ router.get('/:id', controllers.getUserById);
  * /users/activate/{token}:
  *   post:
  *     summary: Activate user account with verification token
+ *     tags: [Users]
  *     description: This endpoint allows users to activate their account using a verification token sent via email.
  *     parameters:
  *       - in: path
@@ -120,5 +125,8 @@ router.get('/:id', controllers.getUserById);
  *         description: Bad request, invalid or expired token
  */
 router.post("/activate/:token", controllers.validateEmail);
+
+// Si vous voulez des routes protégées plus tard, vous pouvez utiliser authMiddleware
+// router.get('/profile', authMiddleware, controllers.getMyProfile);
 
 export default router;

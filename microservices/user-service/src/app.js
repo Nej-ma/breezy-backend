@@ -32,8 +32,12 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: `http://localhost:${PORT}`,
-        description: 'Serveur de développement User Service'
+        url: 'http://localhost:3000/api/users',  // ✅ Via API Gateway
+        description: 'User Service via API Gateway (Recommended)'
+      },
+      {
+        url: `http://localhost:${PORT}`,         // ✅ Direct access
+        description: 'User Service Direct Access'
       }
     ],
     components: {
@@ -51,7 +55,7 @@ const swaggerOptions = {
       }
     ]
   },
-  apis: ['./src/routes/*.js'] // Chemin vers les fichiers contenant les annotations Swagger
+  apis: ['./src/routes/*.js']
 };
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
@@ -110,6 +114,11 @@ app.get('/health', (req, res) => {
 
 // Routes
 app.use('/users', userRoutes);
+
+// Route pour le JSON Swagger (OBLIGATOIRE pour l'API Gateway)
+app.get('/docs/swagger.json', (req, res) => {
+  res.json(swaggerSpec);
+});
 
 // Documentation Swagger
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {

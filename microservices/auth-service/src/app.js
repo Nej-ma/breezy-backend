@@ -11,7 +11,6 @@ import swaggerUi from 'swagger-ui-express';
 
 // Import des routes
 import authRoutes from './routes/auth.js';
-import userRoutes from './routes/users.js';
 
 // Configuration de l'environnement
 dotenv.config();
@@ -73,17 +72,37 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: `http://localhost:${PORT}`,
-        description: 'Auth Service Development',
+        url: 'http://localhost:3000/api/auth',  // ✅ Via API Gateway
+        description: 'Auth Service via API Gateway (Recommended)'
       },
+      {
+        url: `http://localhost:${PORT}`,       // ✅ Direct access
+        description: 'Auth Service Direct Access'
+      }
     ],
   },
   apis: ['./src/routes/*.js'],
 };
 
 const specs = swaggerJsdoc(swaggerOptions);
-app.use('/docs', swaggerUi.serve, swaggerUi.setup(specs));
 
+// Route pour le JSON Swagger (OBLIGATOIRE pour l'API Gateway)
+app.get('/docs/swagger.json', (req, res) => {
+  res.json(specs);
+});
+
+// Configuration Swagger
+app.use('/docs', swaggerUi.serve);
+app.get('/docs', (req, res) => {
+  const options = {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'Breezy Auth Service API Documentation',
+    swaggerOptions: {
+      persistAuthorization: true,
+    }
+  };
+  res.send(swaggerUi.generateHTML(specs, options));
+});
 // Health check
 app.get('/health', (req, res) => {
   res.status(200).json({
@@ -96,7 +115,6 @@ app.get('/health', (req, res) => {
 
 // Routes
 app.use('/auth', authRoutes);
-app.use('/users', userRoutes);
 
 // Route par défaut
 app.get('/', (req, res) => {

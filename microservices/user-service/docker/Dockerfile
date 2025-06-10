@@ -4,17 +4,20 @@ FROM node:18-alpine
 # Set working directory in container
 WORKDIR /app
 
-# Install nodemon globally for development
-RUN npm install -g nodemon
+# Install curl for health checks and nodemon globally for development
+RUN apk add --no-cache curl && npm install -g nodemon
 
 # Copy package.json and package-lock.json
-COPY package*.json ./
+COPY user-service/package*.json ./
 
 # Install dependencies
 RUN npm install
 
 # Copy source code
-COPY src/ ./src/
+COPY user-service/src/ ./src/
+
+# Copy the shared folder to match VSCode structure
+COPY shared /app/microservices/shared
 
 # Create uploads directory for file storage
 RUN mkdir -p uploads
