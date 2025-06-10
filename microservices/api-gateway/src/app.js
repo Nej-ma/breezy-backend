@@ -15,10 +15,10 @@ const PORT = process.env.PORT || 3000;
 
 // Configuration des services
 const services = {
-  auth: process.env.AUTH_SERVICE_URL || 'http://auth-service:3001',
-  user: process.env.USER_SERVICE_URL || 'http://user-service:3002',
-  post: process.env.POST_SERVICE_URL || 'http://post-service:3003',
-  notification: process.env.NOTIFICATION_SERVICE_URL || 'http://notification-service:3004'
+  auth: process.env.AUTH_SERVICE_URL || 'http://localhost:3001',
+  user: process.env.USER_SERVICE_URL || 'http://localhost:3002',
+  post: process.env.POST_SERVICE_URL || 'http://localhost:3003',
+  notification: process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3004'
 };
 
 // Middlewares de sécurité
@@ -98,6 +98,12 @@ app.use('/api/auth', createProxy(services.auth, { '^/api/auth': '/auth' }));
 app.use('/api/users', createProxy(services.user, { '^/api/users': '/users' }));
 app.use('/api/posts', createProxy(services.post, { '^/api/posts': '/posts' }));
 app.use('/api/notifications', createProxy(services.notification, { '^/api/notifications': '/notifications' }));
+
+// Documentation routes for each service
+app.use('/docs/auth', createProxy(services.auth, { '^/docs/auth': '/docs' }));
+app.use('/docs/users', createProxy(services.user, { '^/docs/users': '/docs' }));
+app.use('/docs/posts', createProxy(services.post, { '^/docs/posts': '/docs' }));
+app.use('/docs/notifications', createProxy(services.notification, { '^/docs/notifications': '/docs' }));
 
 // Routes directes (sans /api prefix) pour compatibilité
 app.use('/auth', createProxy(services.auth));

@@ -62,7 +62,7 @@ services:
       - breezy-microservices-network
 
   # =============
-  # MICROSERVICES
+  # MICROSERVICES (Internal only - no external ports)
   # =============
 
   # Auth Service
@@ -72,11 +72,11 @@ services:
       dockerfile: docker/Dockerfile
     container_name: breezy-auth-service
     restart: unless-stopped
-    ports:
-      - "${AUTH_SERVICE_PORT:-3001}:${AUTH_SERVICE_PORT:-3001}"
+    # No external ports - only accessible internally
     env_file:
       - ./microservices/auth-service/.env
     environment:
+      - PORT=3001
       - MONGODB_URI=mongodb://mongodb-auth:27017/breezy_auth
     depends_on:
       - mongodb-auth
@@ -93,13 +93,13 @@ services:
       dockerfile: docker/Dockerfile
     container_name: breezy-user-service
     restart: unless-stopped
-    ports:
-      - "${USER_SERVICE_PORT:-3002}:${USER_SERVICE_PORT:-3002}"
+    # No external ports - only accessible internally
     env_file:
       - ./microservices/user-service/.env
     environment:
+      - PORT=3002
       - MONGODB_URI=mongodb://mongodb-user:27017/breezy_users
-      - AUTH_SERVICE_URL=http://auth-service:${AUTH_SERVICE_PORT:-3001}
+      - AUTH_SERVICE_URL=http://auth-service:3001
     depends_on:
       - mongodb-user
       - auth-service
@@ -116,14 +116,14 @@ services:
       dockerfile: docker/Dockerfile
     container_name: breezy-post-service
     restart: unless-stopped
-    ports:
-      - "${POST_SERVICE_PORT:-3003}:${POST_SERVICE_PORT:-3003}"
+    # No external ports - only accessible internally
     env_file:
       - ./microservices/post-service/.env
     environment:
+      - PORT=3003
       - MONGODB_URI=mongodb://mongodb-post:27017/breezy_posts
-      - AUTH_SERVICE_URL=http://auth-service:${AUTH_SERVICE_PORT:-3001}
-      - USER_SERVICE_URL=http://user-service:${USER_SERVICE_PORT:-3002}
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - USER_SERVICE_URL=http://user-service:3002
     depends_on:
       - mongodb-post
       - auth-service
@@ -141,15 +141,15 @@ services:
       dockerfile: docker/Dockerfile
     container_name: breezy-notification-service
     restart: unless-stopped
-    ports:
-      - "${NOTIFICATION_SERVICE_PORT:-3004}:${NOTIFICATION_SERVICE_PORT:-3004}"
+    # No external ports - only accessible internally
     env_file:
       - ./microservices/notification-service/.env
     environment:
+      - PORT=3004
       - MONGODB_URI=mongodb://mongodb-notification:27017/breezy_notifications
-      - AUTH_SERVICE_URL=http://auth-service:${AUTH_SERVICE_PORT:-3001}
-      - USER_SERVICE_URL=http://user-service:${USER_SERVICE_PORT:-3002}
-      - POST_SERVICE_URL=http://post-service:${POST_SERVICE_PORT:-3003}
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - USER_SERVICE_URL=http://user-service:3002
+      - POST_SERVICE_URL=http://post-service:3003
     depends_on:
       - mongodb-notification
       - auth-service
@@ -159,7 +159,9 @@ services:
     networks:
       - breezy-microservices-network
 
-  # API Gateway
+  # =============
+  # API GATEWAY (Only external access point)
+  # =============
   api-gateway:
     build:
       context: ./microservices/api-gateway
@@ -167,14 +169,15 @@ services:
     container_name: breezy-api-gateway
     restart: unless-stopped
     ports:
-      - "${API_GATEWAY_PORT:-3000}:${API_GATEWAY_PORT:-3000}"
+      - "3000:3000"  # Only the API Gateway is exposed externally
     env_file:
       - ./microservices/api-gateway/.env
     environment:
-      - AUTH_SERVICE_URL=http://auth-service:${AUTH_SERVICE_PORT:-3001}
-      - USER_SERVICE_URL=http://user-service:${USER_SERVICE_PORT:-3002}
-      - POST_SERVICE_URL=http://post-service:${POST_SERVICE_PORT:-3003}
-      - NOTIFICATION_SERVICE_URL=http://notification-service:${NOTIFICATION_SERVICE_PORT:-3004}
+      - PORT=3000
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - USER_SERVICE_URL=http://user-service:3002
+      - POST_SERVICE_URL=http://post-service:3003
+      - NOTIFICATION_SERVICE_URL=http://notification-service:3004
     depends_on:
       - auth-service
       - user-service
@@ -185,6 +188,7 @@ services:
       - /app/node_modules
     networks:
       - breezy-microservices-network
+
 volumes:
   mongodb_auth_data:
   mongodb_user_data:

@@ -11,6 +11,7 @@ import swaggerUi from 'swagger-ui-express';
 
 // Import des routes
 import authRoutes from './routes/auth.js';
+import userRoutes from './routes/users.js';
 
 // Configuration de l'environnement
 dotenv.config();
@@ -95,6 +96,7 @@ app.get('/health', (req, res) => {
 
 // Routes
 app.use('/auth', authRoutes);
+app.use('/users', userRoutes);
 
 // Route par défaut
 app.get('/', (req, res) => {

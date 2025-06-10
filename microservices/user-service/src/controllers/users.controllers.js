@@ -1,5 +1,5 @@
 import User from '../models/User.js';
-// Pas d'import email - géré par l'Auth Service
+import { sendConfirmationEmail } from '../services/email.js';
 
 // Create user account
 const createAccount = async (req, res) => {
@@ -26,8 +26,8 @@ const createAccount = async (req, res) => {
         });
         await newUser.save();
 
-        // TODO: Appeler l'Auth Service pour envoyer l'email de vérification
-        console.log(`📧 Email de vérification à envoyer à ${email} avec token: ${verificationToken}`);
+        // Appeler l'Auth Service pour envoyer l'email de vérification
+        await sendConfirmationEmail(email, verificationToken);
 
         res.status(201).json({ 
             message: 'User created successfully',
