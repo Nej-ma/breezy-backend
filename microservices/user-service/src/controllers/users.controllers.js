@@ -6,6 +6,13 @@ const createAccount = async (req, res) => {
     try {
         const { username, displayName, email, password } = req.body;
 
+        // Validation des champs requis
+        if (!username || !displayName || !email || !password) {
+            return res.status(400).json({ 
+                error: 'Missing required fields: username, displayName, email, password' 
+            });
+        }
+
         // check if there is no user with the same email
         const existingUser = await User.findOne({ email });
         if (existingUser) {
@@ -26,19 +33,23 @@ const createAccount = async (req, res) => {
         });
         await newUser.save();
 
-        // Appeler l'Auth Service pour envoyer l'email de vérification
-        await sendConfirmationEmail(email, verificationToken);
+        // Envoyer l'email de confirmation en arrière-plan (non bloquant)
+        sendConfirmationEmail(email, verificationToken).catch(error => {
+            console.error('❌ Erreur envoi email (non bloquant):', error.message);
+        });
 
         res.status(201).json({ 
             message: 'User created successfully',
-            verificationRequired: true
+            verificationRequired: true,
+            userId: newUser._id
         });
     } catch (error) {
+        console.error('❌ Erreur création utilisateur:', error);
         res.status(400).json({ error: error.message });
     }
 }
 
-// Validate email 
+// Validate email
 const validateEmail = async (req, res) => {
     try {
         const {token} = req.params;
@@ -92,8 +103,8 @@ const getUsers = async (req, res) => {
 
 // export 
 export {
+    getUsers,
+    getUserById,
     createAccount,
-    validateEmail,
-    getUsers, 
-    getUserById
+    validateEmail
 };

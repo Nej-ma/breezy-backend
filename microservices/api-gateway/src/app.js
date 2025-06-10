@@ -392,9 +392,17 @@ Object.entries(SERVICES).forEach(([serviceName, config]) => {
     },
     onProxyReq: (proxyReq, req, res) => {
       console.log(`🔄 Proxying ${req.method} ${req.originalUrl} to ${serviceName}`);
+      // Fix pour les requêtes POST - s'assurer que le body est transmis
+      if (req.body && (req.method === 'POST' || req.method === 'PUT')) {
+        const bodyData = JSON.stringify(req.body);
+        proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+        proxyReq.write(bodyData);
+      }
     },
-    timeout: 30000,
-    proxyTimeout: 30000,
+    timeout: 60000, // 60 secondes timeout
+    proxyTimeout: 60000,
+    // Gérer le parsing du body
+    parseReqBody: true,
     cookieDomainRewrite: false,
     cookiePathRewrite: false
   }));
@@ -473,16 +481,16 @@ app.use('*', (req, res) => {
 
 // Démarrage du serveur
 app.listen(PORT, '0.0.0.0', () => {
-  console.log('🚀 ===================================');
-  console.log(`📡 API Gateway running on port ${PORT}`);
-  console.log(`🏥 Health check: http://localhost:${PORT}/health`);
-  console.log(`📚 Gateway docs: http://localhost:${PORT}/docs`);
-  console.log('🔗 Services routing:');
+  console.log(' ===================================');
+  console.log(`API Gateway running on port ${PORT}`);
+  console.log(` Health check: http://localhost:${PORT}/health`);
+  console.log(`Gateway docs: http://localhost:${PORT}/docs`);
+  console.log(' Services routing:');
   Object.entries(SERVICES).forEach(([name, config]) => {
     console.log(`   ${name.toUpperCase()}: http://localhost:${PORT}${config.path} -> ${config.url}`);
     console.log(`   ${name.toUpperCase()} DOCS: http://localhost:${PORT}${config.path}/docs`);
   });
-  console.log('🚀 ===================================');
+  console.log(' ===================================');
 });
 
 export default app;
