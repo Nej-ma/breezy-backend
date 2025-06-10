@@ -3,7 +3,6 @@ services:
   # DATABASES
   # =============
   
-  # Base de données pour Auth Service
   mongodb-auth:
     image: mongo:7.0
     container_name: breezy-mongodb-auth
@@ -14,8 +13,12 @@ services:
       - mongodb_auth_data:/data/db
     networks:
       - breezy-microservices-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # Base de données pour User Service
   mongodb-user:
     image: mongo:7.0
     container_name: breezy-mongodb-user
@@ -26,8 +29,12 @@ services:
       - mongodb_user_data:/data/db
     networks:
       - breezy-microservices-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # Base de données pour Post Service
   mongodb-post:
     image: mongo:7.0
     container_name: breezy-mongodb-post
@@ -38,8 +45,12 @@ services:
       - mongodb_post_data:/data/db
     networks:
       - breezy-microservices-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # Base de données pour Notification Service
   mongodb-notification:
     image: mongo:7.0
     container_name: breezy-mongodb-notification
@@ -50,8 +61,12 @@ services:
       - mongodb_notification_data:/data/db
     networks:
       - breezy-microservices-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  # Redis pour le cache et les sessions
   redis:
     image: redis:7.2-alpine
     container_name: breezy-redis
@@ -60,131 +75,179 @@ services:
       - redis_data:/data
     networks:
       - breezy-microservices-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   # =============
   # MICROSERVICES
-  # =============
-
-  # Auth Service
+  # =============  # Auth Service
   auth-service:
     build:
-      context: ./microservices/auth-service
-      dockerfile: docker/Dockerfile
+      context: ./microservices
+      dockerfile: auth-service/docker/Dockerfile
     container_name: breezy-auth-service
     restart: unless-stopped
-    ports:
-      - "${AUTH_SERVICE_PORT:-3001}:${AUTH_SERVICE_PORT:-3001}"
     env_file:
       - ./microservices/auth-service/.env
     environment:
+      - PORT=3001
       - MONGODB_URI=mongodb://mongodb-auth:27017/breezy_auth
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production-auth
     depends_on:
-      - mongodb-auth
+      mongodb-auth:
+        condition: service_healthy
     volumes:
       - ./microservices/auth-service:/app
       - /app/node_modules
+      - ./microservices/shared:/app/shared  # 🔥 Ajouter le shared
     networks:
       - breezy-microservices-network
-
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
   # User Service
   user-service:
     build:
-      context: ./microservices/user-service
-      dockerfile: docker/Dockerfile
+      context: ./microservices
+      dockerfile: user-service/docker/Dockerfile
     container_name: breezy-user-service
     restart: unless-stopped
-    ports:
-      - "${USER_SERVICE_PORT:-3002}:${USER_SERVICE_PORT:-3002}"
     env_file:
       - ./microservices/user-service/.env
     environment:
+      - PORT=3002
       - MONGODB_URI=mongodb://mongodb-user:27017/breezy_users
-      - AUTH_SERVICE_URL=http://auth-service:${AUTH_SERVICE_PORT:-3001}
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production-auth
     depends_on:
-      - mongodb-user
-      - auth-service
+      mongodb-user:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
     volumes:
       - ./microservices/user-service:/app
       - /app/node_modules
     networks:
       - breezy-microservices-network
-
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
   # Post Service
   post-service:
     build:
-      context: ./microservices/post-service
-      dockerfile: docker/Dockerfile
+      context: ./microservices
+      dockerfile: post-service/docker/Dockerfile
     container_name: breezy-post-service
     restart: unless-stopped
-    ports:
-      - "${POST_SERVICE_PORT:-3003}:${POST_SERVICE_PORT:-3003}"
     env_file:
       - ./microservices/post-service/.env
     environment:
+      - PORT=3003
       - MONGODB_URI=mongodb://mongodb-post:27017/breezy_posts
-      - AUTH_SERVICE_URL=http://auth-service:${AUTH_SERVICE_PORT:-3001}
-      - USER_SERVICE_URL=http://user-service:${USER_SERVICE_PORT:-3002}
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - USER_SERVICE_URL=http://user-service:3002
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production-auth
     depends_on:
-      - mongodb-post
-      - auth-service
-      - user-service
+      mongodb-post:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
     volumes:
       - ./microservices/post-service:/app
       - /app/node_modules
     networks:
       - breezy-microservices-network
-
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
   # Notification Service
   notification-service:
     build:
-      context: ./microservices/notification-service
-      dockerfile: docker/Dockerfile
+      context: ./microservices
+      dockerfile: notification-service/docker/Dockerfile
     container_name: breezy-notification-service
     restart: unless-stopped
-    ports:
-      - "${NOTIFICATION_SERVICE_PORT:-3004}:${NOTIFICATION_SERVICE_PORT:-3004}"
     env_file:
       - ./microservices/notification-service/.env
     environment:
+      - PORT=3004
       - MONGODB_URI=mongodb://mongodb-notification:27017/breezy_notifications
-      - AUTH_SERVICE_URL=http://auth-service:${AUTH_SERVICE_PORT:-3001}
-      - USER_SERVICE_URL=http://user-service:${USER_SERVICE_PORT:-3002}
-      - POST_SERVICE_URL=http://post-service:${POST_SERVICE_PORT:-3003}
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - USER_SERVICE_URL=http://user-service:3002
+      - POST_SERVICE_URL=http://post-service:3003
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production-auth
     depends_on:
-      - mongodb-notification
-      - auth-service
+      mongodb-notification:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
     volumes:
       - ./microservices/notification-service:/app
       - /app/node_modules
     networks:
       - breezy-microservices-network
-
-  # API Gateway
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+  # =============
+  # API GATEWAY
+  # =============
   api-gateway:
     build:
-      context: ./microservices/api-gateway
-      dockerfile: docker/Dockerfile
+      context: ./microservices
+      dockerfile: api-gateway/docker/Dockerfile
     container_name: breezy-api-gateway
     restart: unless-stopped
     ports:
-      - "${API_GATEWAY_PORT:-3000}:${API_GATEWAY_PORT:-3000}"
+      - "3000:3000"
     env_file:
       - ./microservices/api-gateway/.env
     environment:
-      - AUTH_SERVICE_URL=http://auth-service:${AUTH_SERVICE_PORT:-3001}
-      - USER_SERVICE_URL=http://user-service:${USER_SERVICE_PORT:-3002}
-      - POST_SERVICE_URL=http://post-service:${POST_SERVICE_PORT:-3003}
-      - NOTIFICATION_SERVICE_URL=http://notification-service:${NOTIFICATION_SERVICE_PORT:-3004}
+      - PORT=3000
+      - NODE_ENV=development
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - USER_SERVICE_URL=http://user-service:3002
+      - POST_SERVICE_URL=http://post-service:3003
+      - NOTIFICATION_SERVICE_URL=http://notification-service:3004
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production-auth
     depends_on:
-      - auth-service
-      - user-service
-      - post-service
-      - notification-service
+      auth-service:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+      post-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
     volumes:
       - ./microservices/api-gateway:/app
       - /app/node_modules
     networks:
       - breezy-microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
 volumes:
   mongodb_auth_data:
   mongodb_user_data:
@@ -195,3 +258,6 @@ volumes:
 networks:
   breezy-microservices-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

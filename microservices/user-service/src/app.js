@@ -32,8 +32,12 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: `http://localhost:${PORT}`,
-        description: 'Serveur de développement User Service'
+        url: 'http://localhost:3000/api/users',  // ✅ Via API Gateway
+        description: 'User Service via API Gateway (Recommended)'
+      },
+      {
+        url: `http://localhost:${PORT}`,         // ✅ Direct access
+        description: 'User Service Direct Access'
       }
     ],
     components: {
@@ -51,7 +55,7 @@ const swaggerOptions = {
       }
     ]
   },
-  apis: ['./src/routes/*.js'] // Chemin vers les fichiers contenant les annotations Swagger
+  apis: ['./src/routes/*.js']
 };
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
@@ -95,8 +99,45 @@ app.use(limiter);
 
 // Middlewares
 app.use(morgan('combined'));
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+
+// ✅ Configuration Express améliorée pour gérer les proxies
+app.use(express.json({ 
+  limit: '10mb',
+  type: ['application/json', 'text/plain'] // Accepter plus de content-types
+}));
+app.use(express.urlencoded({ 
+  extended: true, 
+  limit: '10mb',
+  parameterLimit: 20000 // Augmenter la limite des paramètres
+}));
+
+// ✅ Middleware pour parser le raw body si nécessaire
+app.use(express.raw({ 
+  limit: '10mb',
+  type: 'application/octet-stream'
+}));
+
+// ✅ Middleware pour gérer les timeouts
+app.use((req, res, next) => {
+  // Augmenter le timeout pour les requêtes longues
+  req.setTimeout(60000); // 60 secondes
+  res.setTimeout(60000);
+  next();
+});
+
+// Middleware de debug pour les requêtes POST
+app.use((req, res, next) => {
+  if (req.method === 'POST') {
+    console.log(`📥 POST request to ${req.path}`, {
+      'content-type': req.headers['content-type'],
+      'content-length': req.headers['content-length'],
+      'user-agent': req.headers['user-agent'],
+      'hasBody': !!req.body,
+      'bodyKeys': req.body ? Object.keys(req.body) : []
+    });
+  }
+  next();
+});
 
 // Health check
 app.get('/health', (req, res) => {
@@ -110,6 +151,22 @@ app.get('/health', (req, res) => {
 
 // Routes
 app.use('/users', userRoutes);
+
+// Routes de test pour debug
+app.post('/test', (req, res) => {
+  console.log('📥 Test endpoint called');
+  console.log('Body:', req.body);
+  res.json({
+    message: 'Test endpoint works',
+    receivedBody: req.body,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Route pour le JSON Swagger (OBLIGATOIRE pour l'API Gateway)
+app.get('/docs/swagger.json', (req, res) => {
+  res.json(swaggerSpec);
+});
 
 // Documentation Swagger
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
@@ -137,10 +194,19 @@ app.get('/', (req, res) => {
 
 // Middleware de gestion d'erreurs
 app.use((err, req, res, next) => {
-  console.error('❌ User Service Error:', err.stack);
+  console.error('❌ User Service Error:', err);
+  console.error('Error stack:', err.stack);
+  console.error('Request details:', {
+    method: req.method,
+    url: req.url,
+    headers: req.headers,
+    body: req.body
+  });
+  
   res.status(500).json({
     error: 'Something went wrong!',
-    service: 'User Service'
+    service: 'User Service',
+    message: err.message
   });
 });
 

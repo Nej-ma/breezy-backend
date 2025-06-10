@@ -1,6 +1,6 @@
 import express from 'express';
 import * as authController from '../controllers/auth.controllers.js';
-import authMiddleware from '../middleware/auth.middleware.js';
+import authMiddleware from '../../shared/middleware/auth.middleware.js';
 
 const router = express.Router();
 
@@ -253,5 +253,39 @@ router.post('/forgot-password', authController.forgotPassword);
  *         description: Server error
  */
 router.post('/reset-password', authController.resetPassword);
+
+/**
+ * @swagger
+ * /auth/send-verification-email:
+ *   post:
+ *     summary: Send verification email (internal service call)
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - token
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               token:
+ *                 type: string
+ *             example:
+ *               email: "john@example.com"
+ *               token: "abc123def456"
+ *     responses:
+ *       200:
+ *         description: Email sent successfully
+ *       400:
+ *         description: Missing required fields
+ *       500:
+ *         description: Failed to send email
+ */
+router.post('/send-verification-email', authController.sendVerificationEmail);
 
 export default router;
