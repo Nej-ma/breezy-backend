@@ -5,17 +5,16 @@ import authMiddleware from '../middleware/auth.middleware.js';
 const router = express.Router();
 
 // Public routes (no authentication required)
-router.get('/', controllers.getUsers);
 
 /**
  * @swagger
- * /users:
+ * /:
  *   get:
- *     summary: Retrieve a list of users
+ *     summary: Retrieve a list of user profiles
  *     tags: [Users]
  *     responses:
  *       200:
- *         description: A list of users
+ *         description: A list of user profiles
  *         content:
  *           application/json:
  *             schema:
@@ -23,66 +22,49 @@ router.get('/', controllers.getUsers);
  *               items:
  *                 type: object
  *                 properties:
- *                   id:
+ *                   userId:
  *                     type: string
- *                   name:
+ *                   username:
  *                     type: string
- *                   email:
+ *                   displayName:
  *                     type: string
- *   post:
- *     summary: Create a new user account
- *     tags: [Users]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               username:
- *                 type: string
- *               displayName:
- *                 type: string
- *               email:
- *                 type: string
- *               password:
- *                 type: string
- *     responses:
- *       201:
- *         description: User account created successfully
- *       400:
- *         description: Bad request
+ *                   bio:
+ *                     type: string
+ *                   profilePicture:
+ *                     type: string
+ *                   followersCount:
+ *                     type: integer
+ *       404:
+ *         description: No user profiles found
  */
-router.post('/', controllers.createAccount);
+router.get('/', controllers.getUsers);
 
 /**
  * @swagger
- * /users/{id}:
+ * /{id}:
  *   get:
- *     summary: Retrieve a user by ID
+ *     summary: Retrieve a user profile by ID
  *     tags: [Users]
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
- *         description: The ID of the user to retrieve
+ *         description: The user ID from Auth Service
  *         schema:
  *           type: string
  *     responses:
  *       200:
- *         description: User found
+ *         description: User profile found
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 id:
+ *                 userId:
  *                   type: string
  *                 username:
  *                   type: string
  *                 displayName:
- *                   type: string
- *                 email:
  *                   type: string
  *                 bio:
  *                   type: string
@@ -96,40 +78,22 @@ router.post('/', controllers.createAccount);
  *                   type: integer
  *                 postsCount:
  *                   type: integer
- *                 createdAt:
- *                   type: string
- *                   format: date-time
  *       404:
- *         description: User not found
+ *         description: User profile not found
  */
 router.get('/:id', controllers.getUserById);
 
-/**
- * @swagger
- * /users/activate/{token}:
- *   post:
- *     summary: Activate user account with verification token
- *     tags: [Users]
- *     description: This endpoint allows users to activate their account using a verification token sent via email.
- *     parameters:
- *       - in: path
- *         name: token
- *         required: true
- *         description: The verification token sent to the user's email
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: User account activated successfully
- *       400:
- *         description: Bad request, invalid or expired token
- */
+// Internal service routes (appelées par d'autres microservices)
+router.post('/create-profile', controllers.createUserProfile);
+
+// Legacy routes (redirect to Auth Service)
+router.post('/', controllers.createAccount);
 router.post("/activate/:token", controllers.validateEmail);
 
 // Protected routes (authentication required)
 /**
  * @swagger
- * /users/profile:
+ * /profile:
  *   get:
  *     summary: Get current user profile
  *     tags: [Users]
@@ -150,7 +114,7 @@ router.get('/profile', authMiddleware, (req, res) => {
 
 /**
  * @swagger
- * /users/profile:
+ * /profile:
  *   put:
  *     summary: Update current user profile
  *     tags: [Users]

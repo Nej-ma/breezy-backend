@@ -105,8 +105,8 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Routes
-app.use('/posts', postRoutes);
+// Routes - Sans préfixe car l'API Gateway ajoute déjà /api/posts
+app.use('/', postRoutes);
 
 // Routes Swagger
 app.get('/docs/swagger.json', (req, res) => {
@@ -122,10 +122,9 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 app.get('/', (req, res) => {
   res.json({
     message: 'Breezy Post Service API',
-    version: '1.0.0',
-    endpoints: {
+    version: '1.0.0',    endpoints: {
       health: '/health',
-      posts: '/posts'
+      posts: '/'
     }
   });
 });

@@ -98,7 +98,7 @@ const authMiddleware = async (req, res, next) => {
 
 /**
  * @swagger
- * /auth/login:
+ * /login:
  *   post:
  *     summary: Login user
  *     tags: [Authentication]
@@ -136,7 +136,74 @@ router.post('/login', authController.login);
 
 /**
  * @swagger
- * /auth/logout:
+ * /register:
+ *   post:
+ *     summary: Register a new user
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - displayName
+ *               - email
+ *               - password
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 minLength: 3
+ *                 maxLength: 20
+ *               displayName:
+ *                 type: string
+ *                 maxLength: 50
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *                 minLength: 6
+ *             example:
+ *               username: "johndoe"
+ *               displayName: "John Doe"
+ *               email: "john@example.com"
+ *               password: "password123"
+ *     responses:
+ *       201:
+ *         description: User registered successfully
+ *       400:
+ *         description: Invalid input or email already in use
+ *       500:
+ *         description: Server error
+ */
+router.post('/register', authController.createUser);
+
+/**
+ * @swagger
+ * /activate/{token}:
+ *   post:
+ *     summary: Activate user account with verification token
+ *     tags: [Authentication]
+ *     parameters:
+ *       - in: path
+ *         name: token
+ *         required: true
+ *         description: The verification token sent to the user's email
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User account activated successfully
+ *       400:
+ *         description: Bad request, invalid or expired token
+ */
+router.post('/activate/:token', authController.activateUser);
+
+/**
+ * @swagger
+ * /logout:
  *   post:
  *     summary: Logout user
  *     tags: [Authentication]
@@ -158,7 +225,7 @@ router.post('/logout', authController.logout);
 
 /**
  * @swagger
- * /auth/refresh:
+ * /refresh:
  *   post:
  *     summary: Refresh access token
  *     tags: [Authentication]
@@ -188,7 +255,7 @@ router.post('/refresh', authController.refreshToken);
 
 /**
  * @swagger
- * /auth/me:
+ * /me:
  *   get:
  *     summary: Get current user profile
  *     tags: [Authentication]
@@ -215,7 +282,7 @@ router.get('/me', authMiddleware, authController.getCurrentUser);
 
 /**
  * @swagger
- * /auth/forgot-password:
+ * /forgot-password:
  *   post:
  *     summary: Request password reset
  *     tags: [Authentication]
@@ -245,7 +312,7 @@ router.post('/forgot-password', authController.forgotPassword);
 
 /**
  * @swagger
- * /auth/reset-password:
+ * /reset-password:
  *   post:
  *     summary: Reset password with token
  *     tags: [Authentication]
@@ -279,7 +346,7 @@ router.post('/reset-password', authController.resetPassword);
 
 /**
  * @swagger
- * /auth/send-verification-email:
+ * /send-verification-email:
  *   post:
  *     summary: Send verification email (internal service call)
  *     tags: [Authentication]
@@ -313,7 +380,7 @@ router.post('/send-verification-email', authController.sendVerificationEmail);
 
 /**
  * @swagger
- * /auth/validate-token:
+ * /validate-token:
  *   post:
  *     summary: Validate JWT token (Internal service call)
  *     tags: [Authentication]

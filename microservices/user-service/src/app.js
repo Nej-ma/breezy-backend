@@ -150,8 +150,8 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Routes
-app.use('/users', userRoutes);
+// Routes - Sans préfixe car l'API Gateway ajoute déjà /api/users
+app.use('/', userRoutes);
 
 // Routes de test pour debug
 app.post('/test', (req, res) => {
@@ -182,10 +182,9 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
 app.get('/', (req, res) => {
   res.json({
     message: 'Breezy User Service API',
-    version: '1.0.0',
-    endpoints: {
+    version: '1.0.0',    endpoints: {
       health: '/health',
-      users: '/users',
+      profiles: '/',
       docs: '/docs'
     }
   });

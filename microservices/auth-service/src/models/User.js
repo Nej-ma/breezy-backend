@@ -92,6 +92,7 @@ import bcrypt from 'bcryptjs';
  *         createdAt: "2023-01-01T00:00:00.000Z"
  *         updatedAt: "2023-01-02T00:00:00.000Z"
  */
+// Schema pour l'Auth Service - UNIQUEMENT les données d'authentification
 const userSchema = new mongoose.Schema({
   username: {
     type: String,
@@ -117,19 +118,6 @@ const userSchema = new mongoose.Schema({
     required: true,
     trim: true,
     maxLength: 50
-  },
-  bio: {
-    type: String,
-    maxLength: 160,
-    default: ''
-  },
-  profilePicture: {
-    type: String,
-    default: ''
-  },
-  coverPicture: {
-    type: String,
-    default: ''
   },
   verificationToken: {
     type: String,
@@ -164,19 +152,7 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
-  suspendedUntil: Date,
-  followersCount: {
-    type: Number,
-    default: 0
-  },
-  followingCount: {
-    type: Number,
-    default: 0
-  },
-  postsCount: {
-    type: Number,
-    default: 0
-  }
+  suspendedUntil: Date
 }, {
   timestamps: true
 });

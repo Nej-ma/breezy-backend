@@ -113,8 +113,8 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Routes
-app.use('/auth', authRoutes);
+// Routes - Sans préfixe car l'API Gateway ajoute déjà /api/auth
+app.use('/', authRoutes);
 
 // Route par défaut
 app.get('/', (req, res) => {

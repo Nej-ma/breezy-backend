@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import axios from 'axios';
 import User from '../models/User.js';
 import * as emailService from '../services/email.js';
 
@@ -49,22 +50,14 @@ const login = async (req, res) => {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 jours
-    });
-
-    // Réponse sans mot de passe
+    });    // Réponse sans mot de passe et uniquement les données d'auth
     const userResponse = {
       id: user._id,
       username: user.username,
       email: user.email,
       displayName: user.displayName,
-      bio: user.bio,
-      profilePicture: user.profilePicture,
-      coverPicture: user.coverPicture,
       isVerified: user.isVerified,
       role: user.role,
-      followersCount: user.followersCount,
-      followingCount: user.followingCount,
-      postsCount: user.postsCount,
       createdAt: user.createdAt
     };
 
@@ -220,6 +213,23 @@ const createUser = async (req, res) => {
 
     await newUser.save();
 
+    // Créer le profil utilisateur dans le User Service
+    try {
+      const userServiceUrl = process.env.USER_SERVICE_URL || 'http://user-service:3002';
+      await axios.post(`${userServiceUrl}/users/create-profile`, {
+        userId: newUser._id.toString(),
+        username: newUser.username,
+        displayName: newUser.displayName
+      }, {
+        timeout: 5000,
+        headers: { 'Content-Type': 'application/json' }
+      });
+      console.log('✅ Profil utilisateur créé dans User Service');
+    } catch (error) {
+      console.error('⚠️ Erreur création profil User Service (non bloquant):', error.message);
+      // Ne pas faire échouer la création d'utilisateur pour cette erreur
+    }
+
     // Envoyer l'email de confirmation
     await emailService.sendConfirmationEmail(email, verificationToken);
 
@@ -336,9 +346,7 @@ const validateToken = async (req, res) => {
         valid: false,
         error: 'User email not verified'
       });
-    }
-
-    // Return user info
+    }    // Return user info (auth data only)
     res.status(200).json({
       valid: true,
       user: {
@@ -347,14 +355,8 @@ const validateToken = async (req, res) => {
         username: user.username,
         email: user.email,
         displayName: user.displayName,
-        bio: user.bio,
-        profilePicture: user.profilePicture,
-        coverPicture: user.coverPicture,
         isVerified: user.isVerified,
         role: user.role,
-        followersCount: user.followersCount,
-        followingCount: user.followingCount,
-        postsCount: user.postsCount,
         createdAt: user.createdAt
       }
     });

@@ -22,7 +22,7 @@ router.delete('/:id', authMiddleware, controllers.deletePost);
 
 /**
  * @swagger
- * /posts:
+ * /:
  *   post:
  *     summary: Publish a new post
  *     tags: [Posts]
@@ -65,7 +65,7 @@ router.delete('/:id', authMiddleware, controllers.deletePost);
 
 /**
  * @swagger
- * /posts:
+ * /:
  *   get:
  *     summary: Get all posts
  *     tags: [Posts]
@@ -82,7 +82,7 @@ router.delete('/:id', authMiddleware, controllers.deletePost);
 
 /**
  * @swagger
- * /posts/{id}:
+ * /{id}:
  *   get:
  *     summary: Get a post by ID
  *     tags: [Posts]
@@ -102,7 +102,7 @@ router.delete('/:id', authMiddleware, controllers.deletePost);
 
 /**
  * @swagger
- * /posts/{id}:
+ * /{id}:
  *   put:
  *     summary: Update a post by ID
  *     tags: [Posts]
@@ -151,7 +151,7 @@ router.delete('/:id', authMiddleware, controllers.deletePost);
 
 /**
  * @swagger
- * /posts/{id}:
+ * /{id}:
  *   delete:
  *     summary: Delete a post by ID
  *     tags: [Posts]
