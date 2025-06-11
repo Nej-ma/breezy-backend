@@ -16,8 +16,7 @@ RUN npm install
 # Copy source code
 COPY notification-service/src/ ./src/
 
-# Copy the shared folder to match VSCode structure
-COPY shared /app/microservices/shared
+
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \

@@ -6,6 +6,11 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import swaggerJsdoc from 'swagger-jsdoc';
+import swaggerUi from 'swagger-ui-express';
+
+// Import du middleware d'authentification local
+import { authMiddleware, socketAuthMiddleware } from './middleware/auth.middleware.js';
 
 // Configuration de l'environnement
 dotenv.config();
@@ -56,17 +61,17 @@ app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Socket.IO pour les notifications temps réel
-io.on('connection', (socket) => {
-  console.log('🔌 User connected to notifications:', socket.id);
+// Socket.IO with distributed authentication
+io.use(socketAuthMiddleware);
 
-  socket.on('join-user', (userId) => {
-    socket.join(`user-${userId}`);
-    console.log(`👤 User ${userId} joined notifications room`);
-  });
+io.on('connection', (socket) => {
+  console.log(`🔌 User ${socket.user.username} (${socket.userId}) connected to notifications`);
+
+  socket.join(`user-${socket.userId}`);
+  console.log(`👤 User ${socket.user.username} joined notifications room`);
 
   socket.on('disconnect', () => {
-    console.log('🔌 User disconnected from notifications:', socket.id);
+    console.log(`🔌 User ${socket.user.username} disconnected from notifications`);
   });
 });
 
@@ -95,16 +100,28 @@ app.get('/notifications', (req, res) => {
   });
 });
 
-// Endpoint pour envoyer une notification
-app.post('/notifications/send', (req, res) => {
+// Protected endpoint for sending notifications
+app.post('/notifications/send', authMiddleware, (req, res) => {
   const { userId, type, message, data } = req.body;
   
-  // Émettre la notification via Socket.IO
+  // Check permissions (user can only send to themselves unless admin)
+  if (req.user.id !== userId && req.user.role !== 'admin') {
+    return res.status(403).json({ 
+      error: 'Forbidden: Cannot send notifications for other users',
+      service: 'Notification Service'
+    });
+  }
+  
+  // Emit notification
   io.to(`user-${userId}`).emit('notification', {
     type,
     message,
     data,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    from: {
+      id: req.user.id,
+      username: req.user.username
+    }
   });
 
   res.status(200).json({
@@ -125,6 +142,46 @@ app.get('/', (req, res) => {
     }
   });
 });
+
+// Configuration Swagger
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Breezy Notification Service API',
+      version: '1.0.0',
+      description: 'API de notifications temps réel pour Breezy',
+    },
+    servers: [
+      {
+        url: 'http://localhost:3000/api/notifications',
+        description: 'Notification Service via API Gateway'
+      }
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT'
+        }
+      }
+    }
+  },
+  apis: ['./src/app.js']
+};
+
+const swaggerSpec = swaggerJsdoc(swaggerOptions);
+
+// Routes Swagger
+app.get('/docs/swagger.json', (req, res) => {
+  res.json(swaggerSpec);
+});
+
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Breezy Notification Service API Documentation'
+}));
 
 // Middleware de gestion d'erreurs
 app.use((err, req, res, next) => {

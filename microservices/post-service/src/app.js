@@ -5,6 +5,10 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
+import jwt from 'jsonwebtoken'; // Ajouté pour l'authentification locale
+import axios from 'axios'; // Ajouté pour les appels vers les autres services
+import swaggerJsdoc from 'swagger-jsdoc';
+import swaggerUi from 'swagger-ui-express';
 
 // Import des routes
 import postRoutes from './routes/posts.js';
@@ -57,6 +61,40 @@ app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// Configuration Swagger pour Post Service
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Breezy Post Service API',
+      version: '1.0.0',
+      description: 'API de gestion des posts pour Breezy - Service indépendant',
+    },
+    servers: [
+      {
+        url: 'http://localhost:3000/api/posts',  
+        description: 'Post Service via API Gateway (Recommended)'
+      },
+      {
+        url: `http://localhost:${PORT}`,         
+        description: 'Post Service Direct Access'
+      }
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT'
+        }
+      }
+    }
+  },
+  apis: ['./src/routes/*.js']
+};
+
+const swaggerSpec = swaggerJsdoc(swaggerOptions);
+
 // Health check
 app.get('/health', (req, res) => {
   res.status(200).json({
@@ -69,6 +107,16 @@ app.get('/health', (req, res) => {
 
 // Routes
 app.use('/posts', postRoutes);
+
+// Routes Swagger
+app.get('/docs/swagger.json', (req, res) => {
+  res.json(swaggerSpec);
+});
+
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Breezy Post Service API Documentation'
+}));
 
 // Route par défaut
 app.get('/', (req, res) => {

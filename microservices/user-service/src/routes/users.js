@@ -1,10 +1,10 @@
 import express from 'express';
 import * as controllers from '../controllers/users.controllers.js';
+import authMiddleware from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
-
-/* GET users listing. */
+// Public routes (no authentication required)
 router.get('/', controllers.getUsers);
 
 /**
@@ -126,7 +126,59 @@ router.get('/:id', controllers.getUserById);
  */
 router.post("/activate/:token", controllers.validateEmail);
 
-// Si vous voulez des routes protégées plus tard, vous pouvez utiliser authMiddleware
-// router.get('/profile', authMiddleware, controllers.getMyProfile);
+// Protected routes (authentication required)
+/**
+ * @swagger
+ * /users/profile:
+ *   get:
+ *     summary: Get current user profile
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Current user profile
+ *       401:
+ *         description: Unauthorized
+ */
+router.get('/profile', authMiddleware, (req, res) => {
+  res.json({
+    message: 'Current user profile',
+    user: req.user
+  });
+});
+
+/**
+ * @swagger
+ * /users/profile:
+ *   put:
+ *     summary: Update current user profile
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               displayName:
+ *                 type: string
+ *               bio:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ *       401:
+ *         description: Unauthorized
+ */
+router.put('/profile', authMiddleware, (req, res) => {
+  res.json({
+    message: 'Profile update functionality would be implemented here',
+    user: req.user,
+    updateData: req.body
+  });
+});
 
 export default router;

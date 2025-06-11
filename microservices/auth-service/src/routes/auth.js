@@ -1,8 +1,31 @@
 import express from 'express';
 import * as authController from '../controllers/auth.controllers.js';
-import authMiddleware from '../../shared/middleware/auth.middleware.js';
+import jwt from 'jsonwebtoken';
 
 const router = express.Router();
+
+// Middleware d'authentification local pour l'Auth Service
+const authMiddleware = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Access token required' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    req.user = decoded;
+    next();
+
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'Token expired' });
+    }
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+};
 
 /**
  * @swagger
@@ -287,5 +310,55 @@ router.post('/reset-password', authController.resetPassword);
  *         description: Failed to send email
  */
 router.post('/send-verification-email', authController.sendVerificationEmail);
+
+/**
+ * @swagger
+ * /auth/validate-token:
+ *   post:
+ *     summary: Validate JWT token (Internal service call)
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 description: JWT token to validate
+ *             example:
+ *               token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *     responses:
+ *       200:
+ *         description: Token is valid
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 valid:
+ *                   type: boolean
+ *                   example: true
+ *                 user:
+ *                   $ref: '#/components/schemas/UserProfile'
+ *       401:
+ *         description: Invalid or expired token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 valid:
+ *                   type: boolean
+ *                   example: false
+ *                 error:
+ *                   type: string
+ *       500:
+ *         description: Server error
+ */
+router.post('/validate-token', authController.validateToken);
 
 export default router;

@@ -285,6 +285,104 @@ const sendVerificationEmail = async (req, res) => {
   }
 };
 
+// Validate token (called by other microservices)
+const validateToken = async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({
+        valid: false,
+        error: 'Token is required'
+      });
+    }
+
+    // Verify JWT token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Check if user still exists and is active
+    const user = await User.findById(decoded.userId).select('-password -verificationToken -passwordResetToken');
+    
+    if (!user) {
+      return res.status(401).json({
+        valid: false,
+        error: 'User not found'
+      });
+    }
+
+    if (!user.isActive) {
+      return res.status(401).json({
+        valid: false,
+        error: 'User account is inactive'
+      });
+    }
+
+    if (user.isSuspended) {
+      // Check if suspension has expired
+      if (user.suspendedUntil && new Date() > user.suspendedUntil) {
+        user.isSuspended = false;
+        user.suspendedUntil = null;
+        await user.save();
+      } else {
+        return res.status(401).json({
+          valid: false,
+          error: 'User account is suspended'
+        });
+      }
+    }
+
+    if (!user.isVerified) {
+      return res.status(401).json({
+        valid: false,
+        error: 'User email not verified'
+      });
+    }
+
+    // Return user info
+    res.status(200).json({
+      valid: true,
+      user: {
+        id: user._id,
+        userId: user._id, // For compatibility
+        username: user.username,
+        email: user.email,
+        displayName: user.displayName,
+        bio: user.bio,
+        profilePicture: user.profilePicture,
+        coverPicture: user.coverPicture,
+        isVerified: user.isVerified,
+        role: user.role,
+        followersCount: user.followersCount,
+        followingCount: user.followingCount,
+        postsCount: user.postsCount,
+        createdAt: user.createdAt
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Token validation error:', error.message);
+    
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        valid: false,
+        error: 'Token expired'
+      });
+    }
+    
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({
+        valid: false,
+        error: 'Invalid token'
+      });
+    }
+
+    return res.status(500).json({
+      valid: false,
+      error: 'Token validation failed'
+    });
+  }
+};
+
 export {
   login,
   logout,
@@ -294,5 +392,6 @@ export {
   resetPassword,
   createUser,
   activateUser,
-  sendVerificationEmail
+  sendVerificationEmail,
+  validateToken
 };

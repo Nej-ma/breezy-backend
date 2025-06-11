@@ -1,14 +1,17 @@
 import express from 'express';
 import * as controllers from '../controllers/posts.controllers.js';
+import authMiddleware from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
-//implémenter un middleware pour vérifier l'authentification
-router.post('/', controllers.publishPost); 
+// Public routes (no authentication required)
 router.get('/', controllers.getPosts);
 router.get('/:id', controllers.getPost);
-router.put('/:id', controllers.updatePost); 
-router.delete('/:id', controllers.deletePost);
+
+// Protected routes (authentication required)
+router.post('/', authMiddleware, controllers.publishPost); 
+router.put('/:id', authMiddleware, controllers.updatePost); 
+router.delete('/:id', authMiddleware, controllers.deletePost);
 
 /**
  * @swagger

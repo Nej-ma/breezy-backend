@@ -3,29 +3,39 @@ import Tag from '../models/Tag.js';
 
 const publishPost = async (req, res) => {
     try {
-        const { author, content, images, videos, tags, mentions, visibility } = req.body;
+        const { content, images, videos, tags, mentions, visibility } = req.body;
+        
+        // Get author from authenticated user
+        const author = req.user.id || req.user.userId;
     
         // Validate required fields
-        if (!author || !content) {
-        return res.status(400).json({ message: 'Author and content are required.' });
+        if (!content) {
+            return res.status(400).json({ message: 'Content is required.' });
         }
-        
 
         // Create a new post
         const newPost = new Post({
-        author,
-        content,
-        images: images || [],
-        videos: videos || [],
-        tags: tags || [],
-        mentions: mentions || [],
-        visibility: visibility || 'public'
+            author,
+            content,
+            images: images || [],
+            videos: videos || [],
+            tags: tags || [],
+            mentions: mentions || [],
+            visibility: visibility || 'public'
         });
     
         // Save the post to the database
         await newPost.save();
     
-        res.status(201).json({ message: 'Post published successfully', post: newPost });
+        res.status(201).json({ 
+            message: 'Post published successfully', 
+            post: newPost,
+            author: {
+                id: req.user.id,
+                username: req.user.username,
+                displayName: req.user.displayName
+            }
+        });
     } catch (error) {
         console.error('Error publishing post:', error);
         res.status(500).json({ message: 'Internal server error' });
