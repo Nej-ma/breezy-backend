@@ -1,14 +1,17 @@
 import express from 'express';
 import * as controllers from '../controllers/posts.controllers.js';
+import authMiddleware from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
-//implémenter un middleware pour vérifier l'authentification
-router.post('/', controllers.publishPost); 
+// Public routes (no authentication required)
 router.get('/', controllers.getPosts);
 router.get('/:id', controllers.getPost);
-router.put('/:id', controllers.updatePost); 
-router.delete('/:id', controllers.deletePost);
+
+// Protected routes (authentication required)
+router.post('/', authMiddleware, controllers.publishPost); 
+router.put('/:id', authMiddleware, controllers.updatePost); 
+router.delete('/:id', authMiddleware, controllers.deletePost);
 
 /**
  * @swagger
@@ -19,7 +22,7 @@ router.delete('/:id', controllers.deletePost);
 
 /**
  * @swagger
- * /posts:
+ * /:
  *   post:
  *     summary: Publish a new post
  *     tags: [Posts]
@@ -62,7 +65,7 @@ router.delete('/:id', controllers.deletePost);
 
 /**
  * @swagger
- * /posts:
+ * /:
  *   get:
  *     summary: Get all posts
  *     tags: [Posts]
@@ -79,7 +82,7 @@ router.delete('/:id', controllers.deletePost);
 
 /**
  * @swagger
- * /posts/{id}:
+ * /{id}:
  *   get:
  *     summary: Get a post by ID
  *     tags: [Posts]
@@ -99,7 +102,7 @@ router.delete('/:id', controllers.deletePost);
 
 /**
  * @swagger
- * /posts/{id}:
+ * /{id}:
  *   put:
  *     summary: Update a post by ID
  *     tags: [Posts]
@@ -148,7 +151,7 @@ router.delete('/:id', controllers.deletePost);
 
 /**
  * @swagger
- * /posts/{id}:
+ * /{id}:
  *   delete:
  *     summary: Delete a post by ID
  *     tags: [Posts]

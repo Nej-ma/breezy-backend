@@ -102,7 +102,6 @@ services:
     volumes:
       - ./microservices/auth-service:/app
       - /app/node_modules
-      - ./microservices/shared:/app/shared  # 🔥 Ajouter le shared
     networks:
       - breezy-microservices-network
     healthcheck:

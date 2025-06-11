@@ -1,8 +1,31 @@
 import express from 'express';
 import * as authController from '../controllers/auth.controllers.js';
-import authMiddleware from '../../shared/middleware/auth.middleware.js';
+import jwt from 'jsonwebtoken';
 
 const router = express.Router();
+
+// Middleware d'authentification local pour l'Auth Service
+const authMiddleware = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Access token required' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    req.user = decoded;
+    next();
+
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'Token expired' });
+    }
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+};
 
 /**
  * @swagger
@@ -75,7 +98,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /auth/login:
+ * /login:
  *   post:
  *     summary: Login user
  *     tags: [Authentication]
@@ -113,7 +136,74 @@ router.post('/login', authController.login);
 
 /**
  * @swagger
- * /auth/logout:
+ * /register:
+ *   post:
+ *     summary: Register a new user
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - displayName
+ *               - email
+ *               - password
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 minLength: 3
+ *                 maxLength: 20
+ *               displayName:
+ *                 type: string
+ *                 maxLength: 50
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *                 minLength: 6
+ *             example:
+ *               username: "johndoe"
+ *               displayName: "John Doe"
+ *               email: "john@example.com"
+ *               password: "password123"
+ *     responses:
+ *       201:
+ *         description: User registered successfully
+ *       400:
+ *         description: Invalid input or email already in use
+ *       500:
+ *         description: Server error
+ */
+router.post('/register', authController.createUser);
+
+/**
+ * @swagger
+ * /activate/{token}:
+ *   post:
+ *     summary: Activate user account with verification token
+ *     tags: [Authentication]
+ *     parameters:
+ *       - in: path
+ *         name: token
+ *         required: true
+ *         description: The verification token sent to the user's email
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User account activated successfully
+ *       400:
+ *         description: Bad request, invalid or expired token
+ */
+router.post('/activate/:token', authController.activateUser);
+
+/**
+ * @swagger
+ * /logout:
  *   post:
  *     summary: Logout user
  *     tags: [Authentication]
@@ -135,7 +225,7 @@ router.post('/logout', authController.logout);
 
 /**
  * @swagger
- * /auth/refresh:
+ * /refresh:
  *   post:
  *     summary: Refresh access token
  *     tags: [Authentication]
@@ -165,7 +255,7 @@ router.post('/refresh', authController.refreshToken);
 
 /**
  * @swagger
- * /auth/me:
+ * /me:
  *   get:
  *     summary: Get current user profile
  *     tags: [Authentication]
@@ -192,7 +282,7 @@ router.get('/me', authMiddleware, authController.getCurrentUser);
 
 /**
  * @swagger
- * /auth/forgot-password:
+ * /forgot-password:
  *   post:
  *     summary: Request password reset
  *     tags: [Authentication]
@@ -222,7 +312,7 @@ router.post('/forgot-password', authController.forgotPassword);
 
 /**
  * @swagger
- * /auth/reset-password:
+ * /reset-password:
  *   post:
  *     summary: Reset password with token
  *     tags: [Authentication]
@@ -256,7 +346,7 @@ router.post('/reset-password', authController.resetPassword);
 
 /**
  * @swagger
- * /auth/send-verification-email:
+ * /send-verification-email:
  *   post:
  *     summary: Send verification email (internal service call)
  *     tags: [Authentication]
@@ -287,5 +377,55 @@ router.post('/reset-password', authController.resetPassword);
  *         description: Failed to send email
  */
 router.post('/send-verification-email', authController.sendVerificationEmail);
+
+/**
+ * @swagger
+ * /validate-token:
+ *   post:
+ *     summary: Validate JWT token (Internal service call)
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 description: JWT token to validate
+ *             example:
+ *               token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *     responses:
+ *       200:
+ *         description: Token is valid
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 valid:
+ *                   type: boolean
+ *                   example: true
+ *                 user:
+ *                   $ref: '#/components/schemas/UserProfile'
+ *       401:
+ *         description: Invalid or expired token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 valid:
+ *                   type: boolean
+ *                   example: false
+ *                 error:
+ *                   type: string
+ *       500:
+ *         description: Server error
+ */
+router.post('/validate-token', authController.validateToken);
 
 export default router;

@@ -16,9 +16,6 @@ RUN npm install --omit=dev && npm cache clean --force
 # Copy source code
 COPY api-gateway/src/ ./src/
 
-# Copy the shared folder to match VSCode structure
-COPY shared /app/microservices/shared
-
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S gateway -u 1001

@@ -92,25 +92,19 @@ import bcrypt from 'bcryptjs';
  *         createdAt: "2023-01-01T00:00:00.000Z"
  *         updatedAt: "2023-01-02T00:00:00.000Z"
  */
-const userSchema = new mongoose.Schema({
+// Schema pour le User Service - UNIQUEMENT les données de profil
+const userProfileSchema = new mongoose.Schema({
+  userId: {
+    type: String, // ID de l'utilisateur depuis l'Auth Service
+    required: true,
+    unique: true,
+    index: true
+  },
+  // Données dupliquées pour faciliter les requêtes (eventual consistency)
   username: {
     type: String,
     required: true,
-    unique: true,
-    trim: true,
-    minLength: 3,
-    maxLength: 20
-  },
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    lowercase: true
-  },
-  password: {
-    type: String,
-    required: true,
-    minLength: 6
+    index: true
   },
   displayName: {
     type: String,
@@ -118,6 +112,7 @@ const userSchema = new mongoose.Schema({
     trim: true,
     maxLength: 50
   },
+  // Données de profil uniquement au User Service
   bio: {
     type: String,
     maxLength: 160,
@@ -131,40 +126,6 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
-  verificationToken: {
-    type: String,
-    default: ''
-  },
-  verificationTokenExpires: {
-    type: Date,
-    default: null
-  },
-  passwordResetToken: {
-    type: String,
-    default: ''
-  },
-  passwordResetExpires: {
-    type: Date,
-    default: null
-  },
-  isVerified: {
-    type: Boolean,
-    default: false
-  },
-  role: {
-    type: String,
-    enum: ['user', 'moderator', 'admin'],
-    default: 'user'
-  },
-  isActive: {
-    type: Boolean,
-    default: true
-  },
-  isSuspended: {
-    type: Boolean,
-    default: false
-  },
-  suspendedUntil: Date,
   followersCount: {
     type: Number,
     default: 0
@@ -176,22 +137,27 @@ const userSchema = new mongoose.Schema({
   postsCount: {
     type: Number,
     default: 0
+  },
+  // Métadonnées pour la synchronisation
+  lastSyncedAt: {
+    type: Date,
+    default: Date.now
   }
 }, {
   timestamps: true
 });
 
-// Hash password before saving
-userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  this.password = await bcrypt.hash(this.password, 12);
-  next();
-});
+// Hash password before saving (supprimé car plus nécessaire)
+// userProfileSchema.pre('save', async function(next) {
+//   if (!this.isModified('password')) return next();
+//   this.password = await bcrypt.hash(this.password, 12);
+//   next();
+// });
 
-// Compare password method
-userSchema.methods.comparePassword = async function(candidatePassword) {
-  return bcrypt.compare(candidatePassword, this.password);
-};
+// Compare password method (supprimé car plus nécessaire) 
+// userProfileSchema.methods.comparePassword = async function(candidatePassword) {
+//   return bcrypt.compare(candidatePassword, this.password);
+// };
 
-// Create and export the User model
-export default mongoose.model('User', userSchema);
+// Create and export the UserProfile model
+export default mongoose.model('UserProfile', userProfileSchema);

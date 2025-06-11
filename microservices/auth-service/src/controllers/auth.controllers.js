@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import axios from 'axios';
 import User from '../models/User.js';
 import * as emailService from '../services/email.js';
 
@@ -49,22 +50,14 @@ const login = async (req, res) => {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 jours
-    });
-
-    // Réponse sans mot de passe
+    });    // Réponse sans mot de passe et uniquement les données d'auth
     const userResponse = {
       id: user._id,
       username: user.username,
       email: user.email,
       displayName: user.displayName,
-      bio: user.bio,
-      profilePicture: user.profilePicture,
-      coverPicture: user.coverPicture,
       isVerified: user.isVerified,
       role: user.role,
-      followersCount: user.followersCount,
-      followingCount: user.followingCount,
-      postsCount: user.postsCount,
       createdAt: user.createdAt
     };
 
@@ -220,6 +213,23 @@ const createUser = async (req, res) => {
 
     await newUser.save();
 
+    // Créer le profil utilisateur dans le User Service
+    try {
+      const userServiceUrl = process.env.USER_SERVICE_URL || 'http://user-service:3002';
+      await axios.post(`${userServiceUrl}/users/create-profile`, {
+        userId: newUser._id.toString(),
+        username: newUser.username,
+        displayName: newUser.displayName
+      }, {
+        timeout: 5000,
+        headers: { 'Content-Type': 'application/json' }
+      });
+      console.log('✅ Profil utilisateur créé dans User Service');
+    } catch (error) {
+      console.error('⚠️ Erreur création profil User Service (non bloquant):', error.message);
+      // Ne pas faire échouer la création d'utilisateur pour cette erreur
+    }
+
     // Envoyer l'email de confirmation
     await emailService.sendConfirmationEmail(email, verificationToken);
 
@@ -285,6 +295,96 @@ const sendVerificationEmail = async (req, res) => {
   }
 };
 
+// Validate token (called by other microservices)
+const validateToken = async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({
+        valid: false,
+        error: 'Token is required'
+      });
+    }
+
+    // Verify JWT token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Check if user still exists and is active
+    const user = await User.findById(decoded.userId).select('-password -verificationToken -passwordResetToken');
+    
+    if (!user) {
+      return res.status(401).json({
+        valid: false,
+        error: 'User not found'
+      });
+    }
+
+    if (!user.isVerified) {
+      return res.status(401).json({
+        valid: false,
+        error: 'User account is not verified'
+      });
+    }
+
+    if (user.isSuspended) {
+      // Check if suspension has expired
+      if (user.suspendedUntil && new Date() > user.suspendedUntil) {
+        user.isSuspended = false;
+        user.suspendedUntil = null;
+        await user.save();
+      } else {
+        return res.status(401).json({
+          valid: false,
+          error: 'User account is suspended'
+        });
+      }
+    }
+
+    if (!user.isVerified) {
+      return res.status(401).json({
+        valid: false,
+        error: 'User email not verified'
+      });
+    }    // Return user info (auth data only)
+    res.status(200).json({
+      valid: true,
+      user: {
+        id: user._id,
+        userId: user._id, // For compatibility
+        username: user.username,
+        email: user.email,
+        displayName: user.displayName,
+        isVerified: user.isVerified,
+        role: user.role,
+        createdAt: user.createdAt
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Token validation error:', error.message);
+    
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        valid: false,
+        error: 'Token expired'
+      });
+    }
+    
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({
+        valid: false,
+        error: 'Invalid token'
+      });
+    }
+
+    return res.status(500).json({
+      valid: false,
+      error: 'Token validation failed'
+    });
+  }
+};
+
 export {
   login,
   logout,
@@ -294,5 +394,6 @@ export {
   resetPassword,
   createUser,
   activateUser,
-  sendVerificationEmail
+  sendVerificationEmail,
+  validateToken
 };

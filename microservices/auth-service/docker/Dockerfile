@@ -16,8 +16,7 @@ RUN npm install
 # Copy source code
 COPY auth-service/src/ ./src/
 
-# Copy the shared folder to match VSCode structure
-COPY shared /app/microservices/shared
+
 
 # Create uploads directory for file storage
 RUN mkdir -p uploads

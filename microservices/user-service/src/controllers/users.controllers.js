@@ -1,88 +1,75 @@
-import User from '../models/User.js';
+import UserProfile from '../models/User.js';
 import { sendConfirmationEmail } from '../services/email.js';
 
-// Create user account
-const createAccount = async (req, res) => {
+// Create user profile (appelé par Auth Service)
+const createUserProfile = async (req, res) => {
     try {
-        const { username, displayName, email, password } = req.body;
+        const { userId, username, displayName } = req.body;
 
         // Validation des champs requis
-        if (!username || !displayName || !email || !password) {
+        if (!userId || !username || !displayName) {
             return res.status(400).json({ 
-                error: 'Missing required fields: username, displayName, email, password' 
+                error: 'Missing required fields: userId, username, displayName' 
             });
         }
 
-        // check if there is no user with the same email
-        const existingUser = await User.findOne({ email });
-        if (existingUser) {
-            return res.status(400).json({ error: 'Email already in use' });
+        // Vérifier si le profil existe déjà
+        const existingProfile = await UserProfile.findOne({ userId });
+        if (existingProfile) {
+            return res.status(400).json({ error: 'User profile already exists' });
         }
 
-        // create verification token
-        const verificationToken = Math.random().toString(36).substring(2, 15);
-        const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-
-        const newUser = new User({ 
+        const newProfile = new UserProfile({ 
+            userId,
             username, 
-            displayName, 
-            email, 
-            password, 
-            verificationToken, 
-            verificationTokenExpires: verificationTokenExpiry 
+            displayName
         });
-        await newUser.save();
-
-        // Envoyer l'email de confirmation en arrière-plan (non bloquant)
-        sendConfirmationEmail(email, verificationToken).catch(error => {
-            console.error('❌ Erreur envoi email (non bloquant):', error.message);
-        });
+        await newProfile.save();
 
         res.status(201).json({ 
-            message: 'User created successfully',
-            verificationRequired: true,
-            userId: newUser._id
+            message: 'User profile created successfully',
+            profile: {
+                userId: newProfile.userId,
+                username: newProfile.username,
+                displayName: newProfile.displayName,
+                bio: newProfile.bio,
+                profilePicture: newProfile.profilePicture,
+                coverPicture: newProfile.coverPicture
+            }
         });
     } catch (error) {
-        console.error('❌ Erreur création utilisateur:', error);
+        console.error('❌ Erreur création profil utilisateur:', error);
         res.status(400).json({ error: error.message });
     }
 }
 
-// Validate email
+// Create user account (legacy - redirige vers Auth Service)
+const createAccount = async (req, res) => {
+    res.status(400).json({
+        error: 'User registration should be done via Auth Service',
+        redirectTo: '/api/auth/register',
+        message: 'Please use POST /api/auth/register to create a new account'
+    });
+}
+
+// Validate email (legacy - redirige vers Auth Service)
 const validateEmail = async (req, res) => {
-    try {
-        const {token} = req.params;
-        const user = await User.findOne({ 
-            verificationToken: token, 
-            verificationTokenExpires: { $gt: new Date() } 
-        });
-        
-        if (!user) {
-            return res.status(400).json({ error: 'Invalid or expired token' });
-        }
-        
-        user.isVerified = true;
-        user.verificationToken = '';
-        user.verificationTokenExpires = null;
-
-        await user.save();
-
-        res.status(200).json({ message: 'Email validated successfully' });
-    } catch (error) {
-        return res.status(400).json({ error: error.message });
-    }
+    res.status(400).json({
+        error: 'Email validation should be done via Auth Service',
+        redirectTo: '/api/auth/activate/:token',
+        message: 'Please use POST /api/auth/activate/:token to verify your email'
+    });
 }
 
 // Get user by ID
 const getUserById = async (req, res) => {
     try {
         const { id } = req.params;
-        const user = await User.findById(id).select('-password -verificationToken -verificationTokenExpires -__v -updatedAt');
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+        const userProfile = await UserProfile.findOne({ userId: id });
+        if (!userProfile) {
+            return res.status(404).json({ message: 'User profile not found' });
         }
-        res.json(user);
+        res.json(userProfile);
     } catch (err) {
         res.status(500).json({ message: 'Server error' });
     }
@@ -91,11 +78,11 @@ const getUserById = async (req, res) => {
 // Get all users
 const getUsers = async (req, res) => {
     try {
-        const users = await User.find().select('-password -verificationToken -verificationTokenExpires -__v -updatedAt');
-        if (!users || users.length === 0) {
-            return res.status(404).json({ message: 'No users found' });
+        const profiles = await UserProfile.find().select('-__v -updatedAt');
+        if (!profiles || profiles.length === 0) {
+            return res.status(404).json({ message: 'No user profiles found' });
         }
-        res.json(users);
+        res.json(profiles);
     } catch (err) {
         res.status(500).json({ message: 'Server error' });
     }
@@ -106,5 +93,6 @@ export {
     getUsers,
     getUserById,
     createAccount,
-    validateEmail
+    validateEmail,
+    createUserProfile
 };
