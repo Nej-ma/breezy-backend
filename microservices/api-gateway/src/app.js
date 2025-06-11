@@ -16,8 +16,12 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configuration des services
+// Configuration des services - ORDRE IMPORTANT pour éviter les conflits de routage
 const SERVICES = {
+  notification: {
+    url: process.env.NOTIFICATION_SERVICE_URL || 'http://notification-service:3004',
+    path: '/api/notifications'
+  },
   auth: {
     url: process.env.AUTH_SERVICE_URL || 'http://auth-service:3001',
     path: '/api/auth'
@@ -29,10 +33,6 @@ const SERVICES = {
   post: {
     url: process.env.POST_SERVICE_URL || 'http://post-service:3003',
     path: '/api/posts'
-  },
-  notification: {
-    url: process.env.NOTIFICATION_SERVICE_URL || 'http://notification-service:3004',
-    path: '/api/notifications'
   }
 };
 
@@ -367,7 +367,10 @@ app.get('/docs', async (req, res) => {
 });
 
 // Configuration des proxies pour chaque service (APRÈS les routes de l'API Gateway)
-Object.entries(SERVICES).forEach(([serviceName, config]) => {
+// IMPORTANT: Trier par longueur de path décroissante pour éviter les conflits
+const sortedServices = Object.entries(SERVICES).sort(([,a], [,b]) => b.path.length - a.path.length);
+
+sortedServices.forEach(([serviceName, config]) => {
   console.log(`🔗 Configuration du proxy ${config.path} -> ${config.url}`);
   
   // Appliquer le rate limiting spécifique pour l'auth
