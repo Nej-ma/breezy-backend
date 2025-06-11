@@ -320,10 +320,10 @@ const validateToken = async (req, res) => {
       });
     }
 
-    if (!user.isActive) {
+    if (!user.isVerified) {
       return res.status(401).json({
         valid: false,
-        error: 'User account is inactive'
+        error: 'User account is not verified'
       });
     }
 
