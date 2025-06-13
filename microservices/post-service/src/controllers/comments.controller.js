@@ -101,7 +101,7 @@ const deleteComment = async (req, res) => {
 const updateCommentLikes = async (req, res) => {
     try {
         const commentId = req.params.id;
-        const { userId, action } = req.body; // action can be 'like' or 'unlike'
+        const { userId, action } = req.body; // action: 'like' or 'unlike'
 
         if (!userId || !action) {
             return res.status(400).json({ message: 'User ID and action are required.' });
@@ -112,15 +112,31 @@ const updateCommentLikes = async (req, res) => {
             return res.status(404).json({ message: 'Comment not found.' });
         }
 
+        const existingLike = await Like.findOne({
+            user: userId,
+            targetType: 'Comment',
+            targetId: commentId
+        });
+
         if (action === 'like') {
-            comment.likesCount += 1;
+            if (!existingLike) {
+                await Like.create({
+                    user: userId,
+                    targetType: 'Comment',
+                    targetId: commentId
+                });
+                comment.likesCount += 1;
+                await comment.save();
+            }
         } else if (action === 'unlike') {
-            comment.likesCount = Math.max(0, comment.likesCount - 1);
+            if (existingLike) {
+                await Like.deleteOne({ _id: existingLike._id });
+                comment.likesCount = Math.max(0, comment.likesCount - 1);
+                await comment.save();
+            }
         } else {
             return res.status(400).json({ message: 'Invalid action.' });
         }
-
-        await comment.save();
 
         res.status(200).json({ message: 'Comment likes updated successfully', comment });
     } catch (error) {
