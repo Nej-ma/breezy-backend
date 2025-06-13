@@ -1,5 +1,5 @@
 import express from 'express';
-import controllers from '../controllers/comments.js';
+import controllers from '../controllers/comments.controller.js';
 
 const router = express.Router();
 
@@ -35,7 +35,7 @@ const router = express.Router();
  *       404:
  *         description: Post not found
  */
-router.get('/:postId', controllers.getComments);
+router.get('/:postId', controllers.getComment);
 
 /**
  * @swagger
@@ -75,7 +75,7 @@ router.get('/:postId', controllers.getComments);
  *       400:
  *         description: Invalid input
  */
-router.post('/:postId', controllers.createComment);
+router.post('/:postId', controllers.publishComment);
 
 /**
  * @swagger
@@ -167,6 +167,6 @@ router.delete('/:id', controllers.deleteComment);
  *       404:
  *         description: Comment not found
  */
-router.put('/:id/like', controllers.likeComment);
+router.put('/:id/like', controllers.updateCommentLikes);
 
 export default router;

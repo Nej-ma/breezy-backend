@@ -1,5 +1,5 @@
 import { get } from "mongoose";
-import Comment from "../models/Comment";
+import Comment from "../models/Comment.js";
 
 const publishComment = async (req, res) => {
     try {
@@ -29,7 +29,7 @@ const publishComment = async (req, res) => {
     }
 }
 
-getComment = async (req, res) => {
+const getComment = async (req, res) => {
     try {
         const postId = req.params.postId;
 
@@ -129,3 +129,10 @@ const updateCommentLikes = async (req, res) => {
     }
 }
 
+export default {
+    publishComment,
+    getComment,
+    updateComment,
+    deleteComment,
+    updateCommentLikes
+};
