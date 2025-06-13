@@ -216,7 +216,7 @@ const createUser = async (req, res) => {
     // Créer le profil utilisateur dans le User Service
     try {
       const userServiceUrl = process.env.USER_SERVICE_URL || 'http://user-service:3002';
-      await axios.post(`${userServiceUrl}/users/create-profile`, {
+      await axios.post(`${userServiceUrl}/create-profile`, {
         userId: newUser._id.toString(),
         username: newUser.username,
         displayName: newUser.displayName

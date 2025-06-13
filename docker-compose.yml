@@ -11,6 +11,8 @@ services:
       - MONGO_INITDB_DATABASE=breezy_auth
     volumes:
       - mongodb_auth_data:/data/db
+    ports:
+      - "27017:27017"
     networks:
       - breezy-microservices-network
     healthcheck:
@@ -27,6 +29,8 @@ services:
       - MONGO_INITDB_DATABASE=breezy_users
     volumes:
       - mongodb_user_data:/data/db
+    ports:
+      - "27018:27017"
     networks:
       - breezy-microservices-network
     healthcheck:
@@ -43,6 +47,8 @@ services:
       - MONGO_INITDB_DATABASE=breezy_posts
     volumes:
       - mongodb_post_data:/data/db
+    ports:
+      - "27019:27017"
     networks:
       - breezy-microservices-network
     healthcheck:
@@ -59,6 +65,8 @@ services:
       - MONGO_INITDB_DATABASE=breezy_notifications
     volumes:
       - mongodb_notification_data:/data/db
+    ports:
+      - "27020:27017"
     networks:
       - breezy-microservices-network
     healthcheck:
