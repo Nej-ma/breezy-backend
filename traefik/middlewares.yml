@@ -1,0 +1,27 @@
+# traefik/middlewares.yml
+http:
+  middlewares:
+    # Headers de sécurité basiques
+    security-headers:
+      headers:
+        accessControlAllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - PATCH
+          - OPTIONS
+        accessControlAllowOriginList:
+          - "http://localhost:3000"
+        accessControlAllowCredentials: true
+        accessControlAllowHeaders:
+          - "Authorization"
+          - "Content-Type"
+          - "X-Requested-With"
+        customResponseHeaders:
+          X-Frame-Options: "DENY"
+          X-Content-Type-Options: "nosniff"
+
+    # Compression
+    gzip-compression:
+      compress: {}

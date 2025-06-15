@@ -1,8 +1,37 @@
 services:
   # =============
+  # TRAEFIK - API GATEWAY
+  # =============
+  traefik:
+    image: traefik:v3.4
+    container_name: breezy-traefik
+    restart: unless-stopped
+    command:
+      # API Dashboard (en mode insecure pour le développement)
+      - "--api.insecure=true"
+      # Provider Docker
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      # Provider de fichiers pour configuration dynamique
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+      # Points d'entrée
+      - "--entrypoints.web.address=:80"
+      # Logs (optionnel pour debug)
+      - "--log.level=INFO"
+      - "--accesslog=true"
+    ports:
+      - "8080:80"    # API Gateway sur port 8080
+      - "8081:8080"  # Dashboard Traefik sur port 8081
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./traefik:/etc/traefik/dynamic:ro"
+    networks:
+      - breezy-microservices-network
+
+  # =============
   # DATABASES
   # =============
-  
   mongodb-auth:
     image: mongo:7.0
     container_name: breezy-mongodb-auth
@@ -83,7 +112,8 @@ services:
 
   # =============
   # MICROSERVICES
-  # =============  # Auth Service
+  # =============
+  # Auth Service
   auth-service:
     build:
       context: ./microservices
@@ -110,6 +140,17 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    labels:
+      - "traefik.enable=true"
+      # Routes API avec PathPrefix pour correspondre à votre ancien système
+      - "traefik.http.routers.auth-api.rule=PathPrefix(`/api/auth`)"
+      - "traefik.http.routers.auth-api.entrypoints=web"
+      - "traefik.http.routers.auth-api.service=auth-service"
+      - "traefik.http.services.auth-service.loadbalancer.server.port=3001"
+      # Middleware pour retirer le préfixe /api/auth
+      - "traefik.http.middlewares.auth-stripprefix.stripprefix.prefixes=/api/auth"
+      - "traefik.http.routers.auth-api.middlewares=auth-stripprefix"
+
   # User Service
   user-service:
     build:
@@ -140,6 +181,15 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.user-api.rule=PathPrefix(`/api/users`)"
+      - "traefik.http.routers.user-api.entrypoints=web"
+      - "traefik.http.routers.user-api.service=user-service"
+      - "traefik.http.services.user-service.loadbalancer.server.port=3002"
+      - "traefik.http.middlewares.user-stripprefix.stripprefix.prefixes=/api/users"
+      - "traefik.http.routers.user-api.middlewares=user-stripprefix"
+
   # Post Service
   post-service:
     build:
@@ -173,6 +223,15 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.post-api.rule=PathPrefix(`/api/posts`)"
+      - "traefik.http.routers.post-api.entrypoints=web"
+      - "traefik.http.routers.post-api.service=post-service"
+      - "traefik.http.services.post-service.loadbalancer.server.port=3003"
+      - "traefik.http.middlewares.post-stripprefix.stripprefix.prefixes=/api/posts"
+      - "traefik.http.routers.post-api.middlewares=post-stripprefix"
+
   # Notification Service
   notification-service:
     build:
@@ -205,47 +264,55 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.notification-api.rule=PathPrefix(`/api/notifications`)"
+      - "traefik.http.routers.notification-api.entrypoints=web"
+      - "traefik.http.routers.notification-api.service=notification-service"
+      - "traefik.http.services.notification-service.loadbalancer.server.port=3004"
+      - "traefik.http.middlewares.notification-stripprefix.stripprefix.prefixes=/api/notifications"
+      - "traefik.http.routers.notification-api.middlewares=notification-stripprefix"
+
   # =============
-  # API GATEWAY
+  # SWAGGER AGGREGATOR (pour documentation unifiée)
   # =============
-  api-gateway:
+  swagger-aggregator:
     build:
-      context: ./microservices
-      dockerfile: api-gateway/docker/Dockerfile
-    container_name: breezy-api-gateway
+      context: ./swagger-aggregator
+      dockerfile: Dockerfile
+    container_name: breezy-swagger-aggregator
     restart: unless-stopped
-    ports:
-      - "3000:3000"
-    env_file:
-      - ./microservices/api-gateway/.env
+    networks:
+      - breezy-microservices-network
     environment:
-      - PORT=3000
-      - NODE_ENV=development
+      - PORT=3005
       - AUTH_SERVICE_URL=http://auth-service:3001
       - USER_SERVICE_URL=http://user-service:3002
       - POST_SERVICE_URL=http://post-service:3003
       - NOTIFICATION_SERVICE_URL=http://notification-service:3004
-      - JWT_SECRET=your-super-secret-jwt-key-change-in-production-auth
     depends_on:
-      auth-service:
-        condition: service_healthy
-      user-service:
-        condition: service_healthy
-      post-service:
-        condition: service_healthy
-      notification-service:
-        condition: service_healthy
-    volumes:
-      - ./microservices/api-gateway:/app
-      - /app/node_modules
-    networks:
-      - breezy-microservices-network
+      - auth-service
+      - user-service
+      - post-service
+      - notification-service
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3005/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+    labels:
+      - "traefik.enable=true"
+      # Route pour /docs
+      - "traefik.http.routers.docs.rule=PathPrefix(`/docs`)"
+      - "traefik.http.routers.docs.entrypoints=web"
+      - "traefik.http.routers.docs.service=swagger-aggregator"
+      - "traefik.http.services.swagger-aggregator.loadbalancer.server.port=3005"
+      # Route pour la racine / (page d'accueil)
+      - "traefik.http.routers.root.rule=Path(`/`)"
+      - "traefik.http.routers.root.entrypoints=web"
+      - "traefik.http.routers.root.service=swagger-aggregator"
+      - "traefik.http.routers.root.priority=1"
 
 volumes:
   mongodb_auth_data:
