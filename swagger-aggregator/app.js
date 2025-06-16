@@ -65,10 +65,9 @@ const mergeSwaggerSpecs = async () => {
         name: 'Breezy Team',
         email: 'contact@breezy.com'
       }
-    },
-    servers: [
+    },    servers: [
       {
-        url: 'http://localhost',
+        url: 'http://localhost:8080',
         description: 'Traefik Gateway - Development'
       }
     ],
@@ -191,7 +190,7 @@ app.get('/', (req, res) => {
       }
     },
     endpoints: {
-      traefik_dashboard: 'http://localhost:8080',
+      traefik_dashboard: 'http://localhost:8081',
       health_checks: '/health'
     },
     usage: {
