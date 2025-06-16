@@ -41,15 +41,15 @@ router.get('/', controllers.getUsers);
 
 /**
  * @swagger
- * /{id}:
+ * /{username}:
  *   get:
- *     summary: Retrieve a user profile by ID
+ *     summary: Retrieve a user profile by username
  *     tags: [Users]
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: username
  *         required: true
- *         description: The user ID from Auth Service
+ *         description: The username of the user profile to retrieve
  *         schema:
  *           type: string
  *     responses:
@@ -81,7 +81,7 @@ router.get('/', controllers.getUsers);
  *       404:
  *         description: User profile not found
  */
-router.get('/:id', controllers.getUserById);
+router.get('/:username', controllers.getUserByUsername);
 
 // Internal service routes (appelées par d'autres microservices)
 router.post('/create-profile', controllers.createUserProfile);

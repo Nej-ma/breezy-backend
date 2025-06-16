@@ -61,11 +61,11 @@ const validateEmail = async (req, res) => {
     });
 }
 
-// Get user by ID
-const getUserById = async (req, res) => {
+// Get user by Username
+const getUserByUsername = async (req, res) => {
     try {
-        const { id } = req.params;
-        const userProfile = await UserProfile.findOne({ userId: id });
+        const { username } = req.params;
+        const userProfile = await UserProfile.findOne({ username });
         if (!userProfile) {
             return res.status(404).json({ message: 'User profile not found' });
         }
@@ -91,7 +91,7 @@ const getUsers = async (req, res) => {
 // export 
 export {
     getUsers,
-    getUserById,
+    getUserByUsername,
     createAccount,
     validateEmail,
     createUserProfile
