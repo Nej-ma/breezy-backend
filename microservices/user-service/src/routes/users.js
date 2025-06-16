@@ -83,6 +83,50 @@ router.get('/', controllers.getUsers);
  */
 router.get('/:username', controllers.getUserByUsername);
 
+/**
+ * @swagger
+ * /id/{userId}:
+ *   get:
+ *     summary: Retrieve a user profile by user ID
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         description: The user ID of the user profile to retrieve
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User profile found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 userId:
+ *                   type: string
+ *                 username:
+ *                   type: string
+ *                 displayName:
+ *                   type: string
+ *                 bio:
+ *                   type: string
+ *                 profilePicture:
+ *                   type: string
+ *                 coverPicture:
+ *                   type: string
+ *                 followersCount:
+ *                   type: integer
+ *                 followingCount:
+ *                   type: integer
+ *                 postsCount:
+ *                   type: integer
+ *       404:
+ *         description: User profile not found
+ */
+router.get('/id/:userId', controllers.getUserById);
+
 // Internal service routes (appelées par d'autres microservices)
 router.post('/create-profile', controllers.createUserProfile);
 
