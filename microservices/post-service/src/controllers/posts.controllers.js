@@ -1,21 +1,26 @@
 import Post from '../models/Post.js';
 import Tag from '../models/Tag.js';
+import axios from 'axios';
 
 const publishPost = async (req, res) => {
     try {
         const { content, images, videos, tags, mentions, visibility } = req.body;
-        
-        // Get author from authenticated user
-        const author = req.user.id || req.user.userId;
-    
-        // Validate required fields
+        const userId = req.user.id || req.user.userId;
+
         if (!content) {
             return res.status(400).json({ message: 'Content is required.' });
         }
 
-        // Create a new post
+        // Fetch user data
+        const userServiceUrl = process.env.USER_SERVICE_URL || 'http://localhost:8080/api/users';
+        const { data: userData } = await axios.get(`${userServiceUrl}/id/${userId}`);
+
+        // Create post
         const newPost = new Post({
-            author,
+            author: userId,
+            authorUsername: userData.username,
+            authorDisplayName: userData.displayName,
+            authorProfilePicture: userData.profilePicture || '',
             content,
             images: images || [],
             videos: videos || [],
@@ -23,19 +28,10 @@ const publishPost = async (req, res) => {
             mentions: mentions || [],
             visibility: visibility || 'public'
         });
-    
-        // Save the post to the database
+
         await newPost.save();
-    
-        res.status(201).json({ 
-            message: 'Post published successfully', 
-            post: newPost,
-            author: {
-                id: req.user.id,
-                username: req.user.username,
-                displayName: req.user.displayName
-            }
-        });
+        res.status(201).json({ message: 'Post published successfully', post: newPost });
+
     } catch (error) {
         console.error('Error publishing post:', error);
         res.status(500).json({ message: 'Internal server error' });
@@ -45,7 +41,7 @@ const publishPost = async (req, res) => {
 const getPosts = async (req, res) => {
     try {
         const posts = await Post.find({ isDeleted: false })
-            .populate('author', 'username profilePicture')
+            .populate('tags', 'name')
             .sort({ createdAt: -1 });
     
         res.status(200).json(posts);
@@ -60,9 +56,7 @@ const getPost = async (req, res) => {
         const postId = req.params.id;
     
         const post = await Post.findById(postId)
-            .populate('author', 'username profilePicture')
             .populate('tags', 'name')
-            .populate('mentions', 'username profilePicture');
     
         if (!post || post.isDeleted) {
             return res.status(404).json({ message: 'Post not found.' });

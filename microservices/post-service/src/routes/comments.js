@@ -1,10 +1,17 @@
 import express from 'express';
 import controllers from '../controllers/comments.controller.js';
+import authMiddleware from '../middleware/auth.middleware.js'; // Assure-toi que ce chemin est correct
 
 const router = express.Router();
 
 /**
  * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
  * tags:
  *   name: Comments
  *   description: API for managing comments
@@ -12,7 +19,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /{postId}:
+ * /comments/{postId}:
  *   get:
  *     summary: Get all comments for a post
  *     tags: [Comments]
@@ -35,14 +42,16 @@ const router = express.Router();
  *       404:
  *         description: Post not found
  */
-router.get('/:postId', controllers.getComment);
+router.get('/comments/:postId', controllers.getComment);
 
 /**
  * @swagger
- * /{postId}:
+ * /comments/{postId}:
  *   post:
  *     summary: Create a new comment for a post
  *     tags: [Comments]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: postId
@@ -57,9 +66,6 @@ router.get('/:postId', controllers.getComment);
  *           schema:
  *             type: object
  *             properties:
- *               author:
- *                 type: string
- *                 description: The user ID of the author
  *               content:
  *                 type: string
  *               parentComment:
@@ -75,14 +81,16 @@ router.get('/:postId', controllers.getComment);
  *       400:
  *         description: Invalid input
  */
-router.post('/:postId', controllers.publishComment);
+router.post('/comments/:postId', authMiddleware, controllers.publishComment);
 
 /**
  * @swagger
- * /{id}:
+ * /comments/{id}:
  *   put:
  *     summary: Update a comment by ID
  *     tags: [Comments]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -111,7 +119,7 @@ router.post('/:postId', controllers.publishComment);
  *       404:
  *         description: Comment not found
  */
-router.put('/:id', controllers.updateComment);
+router.put('/comments/:id', authMiddleware, controllers.updateComment);
 
 /**
  * @swagger
@@ -119,6 +127,8 @@ router.put('/:id', controllers.updateComment);
  *   delete:
  *     summary: Delete a comment by ID
  *     tags: [Comments]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -132,14 +142,16 @@ router.put('/:id', controllers.updateComment);
  *       404:
  *         description: Comment not found
  */
-router.delete('/:id', controllers.deleteComment);
+router.delete('/comments/:id', authMiddleware, controllers.deleteComment);
 
 /**
  * @swagger
- * /{id}/like:
+ * /comments/{id}/like:
  *   put:
  *     summary: Like or unlike a comment
  *     tags: [Comments]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -167,6 +179,6 @@ router.delete('/:id', controllers.deleteComment);
  *       404:
  *         description: Comment not found
  */
-router.put('/:id/like', controllers.updateCommentLikes);
+router.put('/comments/:id/like', authMiddleware, controllers.updateCommentLikes);
 
 export default router;

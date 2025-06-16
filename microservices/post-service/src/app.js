@@ -108,7 +108,7 @@ app.get('/health', (req, res) => {
 
 // Routes - Sans préfixe car l'API Gateway ajoute déjà /api/posts
 app.use('/', postRoutes);
-app.use('/comments', commentRoutes);
+app.use('/', commentRoutes);
 
 
 

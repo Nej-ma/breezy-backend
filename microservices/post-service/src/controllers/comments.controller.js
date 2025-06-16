@@ -1,18 +1,27 @@
 import { get } from "mongoose";
 import Comment from "../models/Comment.js";
+import axios from 'axios';
+
 
 const publishComment = async (req, res) => {
     try {
-        const { author, post, content, parentComment, mentions } = req.body;
-
+        const {content, parentComment, mentions } = req.body;
+        const post = req.params.postId
         // Validate required fields
-        if (!author || !post || !content) {
+        if (!post || !content) {
             return res.status(400).json({ message: 'Author, post, and content are required.' });
         }
 
+        const userId = req.user.id || req.user.userId;
+        const userServiceUrl = process.env.USER_SERVICE_URL || 'http://localhost:8080/api/users';
+        const { data: userData } = await axios.get(`${userServiceUrl}/id/${userId}`);
+
         // Create a new comment
         const newComment = new Comment({
-            author,
+            author: userId,
+            authorUsername: userData.username,
+            authorDisplayName: userData.displayName,
+            authorProfilePicture: userData.profilePicture || '',
             post,
             content,
             parentComment: parentComment || null,
