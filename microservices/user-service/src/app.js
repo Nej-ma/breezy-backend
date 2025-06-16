@@ -33,7 +33,7 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: 'http://localhost:3000/api/users',  // ✅ Via API Gateway
+        url: 'http://localhost:8080/api/users',  // ✅ Via API Gateway
         description: 'User Service via API Gateway (Recommended)'
       },
       {

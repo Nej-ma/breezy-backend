@@ -119,5 +119,5 @@ npm run test
 
 ## Monitoring
 - Health checks: `GET /health` sur chaque service
-- Status global: `GET http://localhost:3000/health/services`
-- Documentation: `http://localhost:3000/docs`
+- Status global: `GET http://localhost:8080/
+- Documentation: `http://localhost:8080/docs`

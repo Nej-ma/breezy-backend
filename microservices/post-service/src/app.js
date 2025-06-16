@@ -72,7 +72,7 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: 'http://localhost:3000/api/posts',  
+        url: 'http://localhost:8080/api/posts',
         description: 'Post Service via API Gateway (Recommended)'
       },
       {
