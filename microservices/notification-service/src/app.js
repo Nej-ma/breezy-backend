@@ -154,7 +154,7 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: 'http://localhost:3000/api/notifications',
+        url: 'http://localhost:8080/api/notifications',
         description: 'Notification Service via API Gateway'
       }
     ],
