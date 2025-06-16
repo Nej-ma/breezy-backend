@@ -40,8 +40,6 @@ services:
       - MONGO_INITDB_DATABASE=breezy_auth
     volumes:
       - mongodb_auth_data:/data/db
-    ports:
-      - "27017:27017"
     networks:
       - breezy-microservices-network
     healthcheck:
@@ -58,8 +56,6 @@ services:
       - MONGO_INITDB_DATABASE=breezy_users
     volumes:
       - mongodb_user_data:/data/db
-    ports:
-      - "27018:27017"
     networks:
       - breezy-microservices-network
     healthcheck:
@@ -76,8 +72,6 @@ services:
       - MONGO_INITDB_DATABASE=breezy_posts
     volumes:
       - mongodb_post_data:/data/db
-    ports:
-      - "27019:27017"
     networks:
       - breezy-microservices-network
     healthcheck:
@@ -94,8 +88,6 @@ services:
       - MONGO_INITDB_DATABASE=breezy_notifications
     volumes:
       - mongodb_notification_data:/data/db
-    ports:
-      - "27020:27017"
     networks:
       - breezy-microservices-network
     healthcheck:
@@ -155,9 +147,9 @@ services:
       - "traefik.http.routers.auth-api.entrypoints=web"
       - "traefik.http.routers.auth-api.service=auth-service"
       - "traefik.http.services.auth-service.loadbalancer.server.port=3001"
-      # Middleware pour retirer le préfixe /api/auth
+      # Middleware pour retirer le préfixe /api/auth + sécurité
       - "traefik.http.middlewares.auth-stripprefix.stripprefix.prefixes=/api/auth"
-      - "traefik.http.routers.auth-api.middlewares=auth-stripprefix"
+      - "traefik.http.routers.auth-api.middlewares=auth-stripprefix,security-headers@file,gzip-compression@file"
 
   # User Service
   user-service:
@@ -196,7 +188,7 @@ services:
       - "traefik.http.routers.user-api.service=user-service"
       - "traefik.http.services.user-service.loadbalancer.server.port=3002"
       - "traefik.http.middlewares.user-stripprefix.stripprefix.prefixes=/api/users"
-      - "traefik.http.routers.user-api.middlewares=user-stripprefix"
+      - "traefik.http.routers.user-api.middlewares=user-stripprefix,security-headers@file,gzip-compression@file"
 
   # Post Service
   post-service:
@@ -238,7 +230,7 @@ services:
       - "traefik.http.routers.post-api.service=post-service"
       - "traefik.http.services.post-service.loadbalancer.server.port=3003"
       - "traefik.http.middlewares.post-stripprefix.stripprefix.prefixes=/api/posts"
-      - "traefik.http.routers.post-api.middlewares=post-stripprefix"
+      - "traefik.http.routers.post-api.middlewares=post-stripprefix,security-headers@file,gzip-compression@file"
 
   # Notification Service
   notification-service:
@@ -279,7 +271,7 @@ services:
       - "traefik.http.routers.notification-api.service=notification-service"
       - "traefik.http.services.notification-service.loadbalancer.server.port=3004"
       - "traefik.http.middlewares.notification-stripprefix.stripprefix.prefixes=/api/notifications"
-      - "traefik.http.routers.notification-api.middlewares=notification-stripprefix"
+      - "traefik.http.routers.notification-api.middlewares=notification-stripprefix,security-headers@file,gzip-compression@file"
 
   # =============
   # SWAGGER AGGREGATOR (pour documentation unifiée)
@@ -316,11 +308,13 @@ services:
       - "traefik.http.routers.docs.entrypoints=web"
       - "traefik.http.routers.docs.service=swagger-aggregator"
       - "traefik.http.services.swagger-aggregator.loadbalancer.server.port=3005"
+      - "traefik.http.routers.docs.middlewares=security-headers@file,gzip-compression@file"
       # Route pour la racine / (page d'accueil)
       - "traefik.http.routers.root.rule=Path(`/`)"
       - "traefik.http.routers.root.entrypoints=web"
       - "traefik.http.routers.root.service=swagger-aggregator"
       - "traefik.http.routers.root.priority=1"
+      - "traefik.http.routers.root.middlewares=security-headers@file,gzip-compression@file"
 
 volumes:
   mongodb_auth_data:
