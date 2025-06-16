@@ -25,14 +25,12 @@ const authMiddleware = async (req, res, next) => {
       console.log('🚀 Using cached token validation');
       req.user = cachedResult.user;
       return next();
-    }
-
-    // Validate token with Auth Service
+    }    // Validate token with Auth Service
     console.log('🔍 Validating token with Auth Service...');
     
     const authServiceUrl = process.env.AUTH_SERVICE_URL || 'http://auth-service:3001';
     
-    const response = await axios.post(`${authServiceUrl}/auth/validate-token`, {
+    const response = await axios.post(`${authServiceUrl}/validate-token`, {
       token: token
     }, {
       timeout: 5000,

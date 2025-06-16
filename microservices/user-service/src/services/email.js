@@ -5,11 +5,10 @@ const AUTH_SERVICE_URL = process.env.AUTH_SERVICE_URL || 'http://auth-service:30
 
 // Fonction pour envoyer un email de confirmation via l'Auth Service
 const sendConfirmationEmail = async (email, token) => {
-    try {
-        console.log(`🔍 Tentative d'envoi d'email via: ${AUTH_SERVICE_URL}/auth/send-verification-email`);
+    try {        console.log(`🔍 Tentative d'envoi d'email via: ${AUTH_SERVICE_URL}/send-verification-email`);
         
         // Appeler l'Auth Service pour envoyer l'email
-        const response = await axios.post(`${AUTH_SERVICE_URL}/auth/send-verification-email`, {
+        const response = await axios.post(`${AUTH_SERVICE_URL}/send-verification-email`, {
             email,
             token
         }, {
