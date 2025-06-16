@@ -75,6 +75,19 @@ const getUserByUsername = async (req, res) => {
     }
 }
 
+const getUserById = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const userProfile = await UserProfile.findOne({ userId });
+        if (!userProfile) {
+            return res.status(404).json({ message: 'User profile not found' });
+        }
+        res.json(userProfile);
+    } catch (err) {
+        res.status(500).json({ message: 'Server error' });
+    }
+}
+
 // Get all users
 const getUsers = async (req, res) => {
     try {
@@ -94,5 +107,6 @@ export {
     getUserByUsername,
     createAccount,
     validateEmail,
-    createUserProfile
+    createUserProfile,
+    getUserById
 };
