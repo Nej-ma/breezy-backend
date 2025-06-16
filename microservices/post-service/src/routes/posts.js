@@ -15,6 +15,13 @@ router.delete('/:id', authMiddleware, controllers.deletePost);
 
 /**
  * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ * 
  * tags:
  *   name: Posts
  *   description: API for posts management
@@ -26,6 +33,8 @@ router.delete('/:id', authMiddleware, controllers.deletePost);
  *   post:
  *     summary: Publish a new post
  *     tags: [Posts]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -61,6 +70,8 @@ router.delete('/:id', authMiddleware, controllers.deletePost);
  *         description: Post created successfully
  *       400:
  *         description: Invalid input
+ *       401:
+ *         description: Unauthorized - Access token required
  */
 
 /**
@@ -106,6 +117,8 @@ router.delete('/:id', authMiddleware, controllers.deletePost);
  *   put:
  *     summary: Update a post by ID
  *     tags: [Posts]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -145,6 +158,8 @@ router.delete('/:id', authMiddleware, controllers.deletePost);
  *         description: Post updated
  *       400:
  *         description: Invalid input
+ *       401:
+ *         description: Unauthorized - Access token required
  *       404:
  *         description: Post not found
  */
@@ -155,6 +170,8 @@ router.delete('/:id', authMiddleware, controllers.deletePost);
  *   delete:
  *     summary: Delete a post by ID
  *     tags: [Posts]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -165,6 +182,8 @@ router.delete('/:id', authMiddleware, controllers.deletePost);
  *     responses:
  *       200:
  *         description: Post deleted
+ *       401:
+ *         description: Unauthorized - Access token required
  *       404:
  *         description: Post not found
  */

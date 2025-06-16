@@ -20,8 +20,7 @@ const authMiddleware = async (req, res, next) => {
     // Check cache first
     const cacheKey = token;
     const cachedResult = tokenCache.get(cacheKey);
-    
-    if (cachedResult && (Date.now() - cachedResult.timestamp < CACHE_TTL)) {
+      if (cachedResult && (Date.now() - cachedResult.timestamp < CACHE_TTL)) {
       req.user = cachedResult.user;
       return next();
     }
@@ -29,7 +28,7 @@ const authMiddleware = async (req, res, next) => {
     // Validate with Auth Service
     const authServiceUrl = process.env.AUTH_SERVICE_URL || 'http://auth-service:3001';
     
-    const response = await axios.post(`${authServiceUrl}/auth/validate-token`, {
+    const response = await axios.post(`${authServiceUrl}/validate-token`, {
       token: token
     }, {
       timeout: 5000,
@@ -82,7 +81,7 @@ const socketAuthMiddleware = async (socket, next) => {
     // Validate with Auth Service
     const authServiceUrl = process.env.AUTH_SERVICE_URL || 'http://auth-service:3001';
     
-    const response = await axios.post(`${authServiceUrl}/auth/validate-token`, {
+    const response = await axios.post(`${authServiceUrl}/validate-token`, {
       token: token
     }, {
       timeout: 5000,

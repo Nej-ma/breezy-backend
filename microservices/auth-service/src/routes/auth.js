@@ -1,31 +1,8 @@
 import express from 'express';
 import * as authController from '../controllers/auth.controllers.js';
-import jwt from 'jsonwebtoken';
+import authMiddleware from '../middleware/auth.middleware.js';
 
 const router = express.Router();
-
-// Middleware d'authentification local pour l'Auth Service
-const authMiddleware = async (req, res, next) => {
-  try {
-    const authHeader = req.headers.authorization;
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'Access token required' });
-    }
-
-    const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
-    req.user = decoded;
-    next();
-
-  } catch (error) {
-    if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({ error: 'Token expired' });
-    }
-    return res.status(401).json({ error: 'Invalid token' });
-  }
-};
 
 /**
  * @swagger
