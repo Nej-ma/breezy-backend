@@ -12,6 +12,7 @@ import swaggerUi from 'swagger-ui-express';
 
 // Import des routes
 import postRoutes from './routes/posts.js';
+import commentRoutes from './routes/comments.js';
 
 // Configuration de l'environnement
 dotenv.config();
@@ -107,6 +108,9 @@ app.get('/health', (req, res) => {
 
 // Routes - Sans préfixe car l'API Gateway ajoute déjà /api/posts
 app.use('/', postRoutes);
+app.use('/', commentRoutes);
+
+
 
 // Routes Swagger
 app.get('/docs/swagger.json', (req, res) => {

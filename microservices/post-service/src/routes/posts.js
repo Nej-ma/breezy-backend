@@ -42,8 +42,6 @@ router.delete('/:id', authMiddleware, controllers.deletePost);
  *           schema:
  *             type: object
  *             properties:
- *               author:
- *                 type: string
  *               content:
  *                 type: string
  *               images:
@@ -72,7 +70,7 @@ router.delete('/:id', authMiddleware, controllers.deletePost);
  *         description: Invalid input
  *       401:
  *         description: Unauthorized - Access token required
- */
+ */ 
 
 /**
  * @swagger
