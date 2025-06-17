@@ -25,3 +25,17 @@ http:
     # Compression
     gzip-compression:
       compress: {}
+    
+    # Chaîne réutilisable pour les API avec stripprefix
+    api-chain:
+      chain:
+        middlewares:
+          - security-headers
+          - gzip-compression
+    
+    # Chaîne réutilisable pour les pages sans stripprefix  
+    web-chain:
+      chain:
+        middlewares:
+          - security-headers
+          - gzip-compression
