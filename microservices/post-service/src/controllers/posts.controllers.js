@@ -1,6 +1,4 @@
 import Post from '../models/Post.js';
-import Tag from '../models/Tag.js';
-import axios from 'axios';
 
 const publishPost = async (req, res) => {
     try {
