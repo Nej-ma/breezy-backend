@@ -166,8 +166,6 @@ router.delete('/comments/:id', authMiddleware, controllers.deleteComment);
  *           schema:
  *             type: object
  *             properties:
- *               userId:
- *                 type: string
  *               action:
  *                 type: string
  *                 enum: [like, unlike]
