@@ -6,18 +6,6 @@ const postSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  authorUsername: {
-    type: String,
-    required: true
-  },
-  authorDisplayName: {
-    type: String,
-    required: true
-  },
-  authorProfilePicture: {
-    type: String,
-    default: ''
-  },
   content: {
     type: String,
     required: true,

@@ -1,26 +1,17 @@
 import Post from '../models/Post.js';
-import Tag from '../models/Tag.js';
-import axios from 'axios';
 
 const publishPost = async (req, res) => {
     try {
         const { content, images, videos, tags, mentions, visibility } = req.body;
-        const userId = req.user.id || req.user.userId;
+        const userId = req.user.userId;
 
         if (!content) {
             return res.status(400).json({ message: 'Content is required.' });
         }
 
-        // Fetch user data
-        const userServiceUrl = process.env.USER_SERVICE_URL || 'http://localhost:8080/api/users';
-        const { data: userData } = await axios.get(`${userServiceUrl}/id/${userId}`);
-
         // Create post
         const newPost = new Post({
             author: userId,
-            authorUsername: userData.username,
-            authorDisplayName: userData.displayName,
-            authorProfilePicture: userData.profilePicture || '',
             content,
             images: images || [],
             videos: videos || [],
