@@ -134,7 +134,6 @@ services:
       - "traefik.http.routers.auth-api.service=auth-service"
       - "traefik.http.services.auth-service.loadbalancer.server.port=3001"
       # Middleware pour retirer le préfixe /api/auth + sécurité
-      # Middleware pour retirer le préfixe /api/auth + sécurité
       - "traefik.http.middlewares.auth-stripprefix.stripprefix.prefixes=/api/auth"
       - "traefik.http.routers.auth-api.middlewares=auth-stripprefix,security-headers@file,gzip-compression@file"
 
