@@ -66,7 +66,7 @@ const updateComment = async (req, res) => {
 
         const updateFields = {};
         if (content !== undefined) updateFields.content = content;
-        if (content !== undefined) updateFields.mentions = mentions || [];
+        if (mentions !== undefined) updateFields.mentions = mentions || [];
 
         // Find and update the comment
         const updatedComment = await Comment.findByIdAndUpdate(commentId, updateFields, { new: true });
