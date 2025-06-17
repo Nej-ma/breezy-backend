@@ -1,6 +1,7 @@
 import express from 'express';
 import * as authController from '../controllers/auth.controllers.js';
 import authMiddleware from '../middleware/auth.middleware.js';
+import { requireAdmin, requireModerator } from '../middleware/role.middleware.js';
 
 const router = express.Router();
 
@@ -404,5 +405,180 @@ router.post('/send-verification-email', authController.sendVerificationEmail);
  *         description: Server error
  */
 router.post('/validate-token', authController.validateToken);
+
+// ===== ADMIN ROUTES =====
+/**
+ * @swagger
+ * /admin/users:
+ *   get:
+ *     summary: Get all users (Admin/Moderator only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of users per page
+ *       - in: query
+ *         name: role
+ *         schema:
+ *           type: string
+ *           enum: [user, moderator, admin]
+ *         description: Filter by role
+ *       - in: query
+ *         name: suspended
+ *         schema:
+ *           type: boolean
+ *         description: Filter by suspension status
+ *     responses:
+ *       200:
+ *         description: Users retrieved successfully
+ *       403:
+ *         description: Insufficient permissions
+ */
+router.get('/admin/users', authMiddleware, requireModerator, authController.getAllUsers);
+
+/**
+ * @swagger
+ * /admin/users/{userId}:
+ *   get:
+ *     summary: Get user by ID (Admin/Moderator only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: User retrieved successfully
+ *       404:
+ *         description: User not found
+ *       403:
+ *         description: Insufficient permissions
+ */
+router.get('/admin/users/:userId', authMiddleware, requireModerator, authController.getUserById);
+
+/**
+ * @swagger
+ * /admin/users/{userId}/role:
+ *   put:
+ *     summary: Update user role (Admin only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - role
+ *             properties:
+ *               role:
+ *                 type: string
+ *                 enum: [user, moderator, admin]
+ *                 description: New role for the user
+ *             example:
+ *               role: "moderator"
+ *     responses:
+ *       200:
+ *         description: User role updated successfully
+ *       400:
+ *         description: Invalid role or cannot demote yourself
+ *       404:
+ *         description: User not found
+ *       403:
+ *         description: Insufficient permissions
+ */
+router.put('/admin/users/:userId/role', authMiddleware, requireAdmin, authController.updateUserRole);
+
+/**
+ * @swagger
+ * /admin/users/{userId}/suspend:
+ *   post:
+ *     summary: Suspend user (Admin/Moderator only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               duration:
+ *                 type: integer
+ *                 description: Suspension duration in hours (omit for permanent)
+ *               reason:
+ *                 type: string
+ *                 description: Reason for suspension
+ *             example:
+ *               duration: 24
+ *               reason: "Violation of community guidelines"
+ *     responses:
+ *       200:
+ *         description: User suspended successfully
+ *       400:
+ *         description: Cannot suspend yourself
+ *       403:
+ *         description: Insufficient permissions or cannot suspend admin
+ *       404:
+ *         description: User not found
+ */
+router.post('/admin/users/:userId/suspend', authMiddleware, requireModerator, authController.suspendUser);
+
+/**
+ * @swagger
+ * /admin/users/{userId}/unsuspend:
+ *   post:
+ *     summary: Unsuspend user (Admin/Moderator only)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: User unsuspended successfully
+ *       404:
+ *         description: User not found
+ *       403:
+ *         description: Insufficient permissions
+ */
+router.post('/admin/users/:userId/unsuspend', authMiddleware, requireModerator, authController.unsuspendUser);
 
 export default router;

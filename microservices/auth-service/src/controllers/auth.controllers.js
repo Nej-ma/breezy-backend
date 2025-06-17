@@ -3,17 +3,24 @@ import crypto from 'crypto';
 import axios from 'axios';
 import User from '../models/User.js';
 import * as emailService from '../services/email.js';
+import { ROLES, isValidRole, canModifyUser } from '../utils/roles.js';
 
 // Générer les tokens JWT
-const generateTokens = (userId) => {
+const generateTokens = (userId, role) => {
   const accessToken = jwt.sign(
-    { userId },
+    { 
+      userId,
+      role
+    },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
   );
 
   const refreshToken = jwt.sign(
-    { userId },
+    { 
+      userId,
+      role
+    },
     process.env.JWT_REFRESH_SECRET,
     { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
   );
@@ -39,10 +46,8 @@ const login = async (req, res) => {
     // Vérifier si le compte est activé
     if (!user.isVerified) {
       return res.status(401).json({ error: 'Please verify your email address first' });
-    }
-
-    // Générer les tokens
-    const { accessToken, refreshToken } = generateTokens(user._id);
+    }    // Générer les tokens
+    const { accessToken, refreshToken } = generateTokens(user._id, user.role);
 
     // Sauvegarder le refresh token (en cookie HTTP-only)
     res.cookie('refreshToken', refreshToken, {
@@ -94,7 +99,14 @@ const refreshToken = async (req, res) => {
     }
 
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-    const { accessToken: newAccessToken } = generateTokens(decoded.userId);
+    
+    // Get user to fetch current role (in case it changed)
+    const user = await User.findById(decoded.userId).select('role');
+    if (!user) {
+      return res.status(401).json({ error: 'User not found' });
+    }
+    
+    const { accessToken: newAccessToken } = generateTokens(decoded.userId, user.role);
 
     res.status(200).json({
       message: 'Token refreshed successfully',
@@ -385,6 +397,208 @@ const validateToken = async (req, res) => {
   }
 };
 
+// Admin functions for user management
+/**
+ * Update user role (Admin only)
+ */
+const updateUserRole = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { role } = req.body;
+
+    // Validate role using utility
+    if (!isValidRole(role)) {
+      return res.status(400).json({ 
+        error: 'Invalid role',
+        validRoles: Object.values(ROLES)
+      });
+    }
+
+    // Find user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Prevent self-demotion from admin
+    if (req.user.id === userId && req.user.role === ROLES.ADMIN && role !== ROLES.ADMIN) {
+      return res.status(400).json({ 
+        error: 'Cannot demote yourself from admin role'
+      });
+    }
+
+    // Check if current user can modify target user's role
+    if (!canModifyUser(req.user.role, user.role)) {
+      return res.status(403).json({ 
+        error: 'Insufficient permissions to modify this user\'s role'
+      });
+    }
+
+    // Update role
+    user.role = role;
+    await user.save();
+
+    res.status(200).json({
+      message: 'User role updated successfully',
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        displayName: user.displayName,
+        role: user.role,
+        updatedAt: user.updatedAt
+      }
+    });
+
+  } catch (error) {
+    console.error('Update user role error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+/**
+ * Suspend user (Admin/Moderator)
+ */
+const suspendUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { duration, reason } = req.body; // duration in hours
+
+    // Find user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }    // Prevent suspending admins (unless you're also admin)
+    if (user.role === ROLES.ADMIN && req.user.role !== ROLES.ADMIN) {
+      return res.status(403).json({ 
+        error: 'Cannot suspend an admin user'
+      });
+    }
+
+    // Prevent self-suspension
+    if (req.user.id === userId) {
+      return res.status(400).json({ 
+        error: 'Cannot suspend yourself'
+      });
+    }
+
+    // Calculate suspension end date
+    const suspendedUntil = duration ? 
+      new Date(Date.now() + duration * 60 * 60 * 1000) : 
+      null; // Permanent if no duration
+
+    user.isSuspended = true;
+    user.suspendedUntil = suspendedUntil;
+    await user.save();
+
+    res.status(200).json({
+      message: 'User suspended successfully',
+      user: {
+        id: user._id,
+        username: user.username,
+        isSuspended: user.isSuspended,
+        suspendedUntil: user.suspendedUntil
+      },
+      reason
+    });
+
+  } catch (error) {
+    console.error('Suspend user error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+/**
+ * Unsuspend user (Admin/Moderator)
+ */
+const unsuspendUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Find user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    user.isSuspended = false;
+    user.suspendedUntil = null;
+    await user.save();
+
+    res.status(200).json({
+      message: 'User unsuspended successfully',
+      user: {
+        id: user._id,
+        username: user.username,
+        isSuspended: user.isSuspended,
+        suspendedUntil: user.suspendedUntil
+      }
+    });
+
+  } catch (error) {
+    console.error('Unsuspend user error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+/**
+ * Get all users (Admin/Moderator)
+ */
+const getAllUsers = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, role, suspended } = req.query;
+    
+    // Build filter
+    const filter = {};
+    if (role) filter.role = role;
+    if (suspended !== undefined) filter.isSuspended = suspended === 'true';
+
+    const users = await User.find(filter)
+      .select('-password -verificationToken -passwordResetToken')
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .sort({ createdAt: -1 });
+
+    const total = await User.countDocuments(filter);
+
+    res.status(200).json({
+      users,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
+
+  } catch (error) {
+    console.error('Get all users error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+/**
+ * Get user by ID (Admin/Moderator)
+ */
+const getUserById = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findById(userId)
+      .select('-password -verificationToken -passwordResetToken');
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.status(200).json({ user });
+
+  } catch (error) {
+    console.error('Get user by ID error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 export {
   login,
   logout,
@@ -395,5 +609,11 @@ export {
   createUser,
   activateUser,
   sendVerificationEmail,
-  validateToken
+  validateToken,
+  // Admin functions
+  updateUserRole,
+  suspendUser,
+  unsuspendUser,
+  getAllUsers,
+  getUserById
 };
