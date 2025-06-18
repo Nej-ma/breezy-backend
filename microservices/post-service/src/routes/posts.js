@@ -7,6 +7,7 @@ const router = express.Router();
 // Public routes (no authentication required)
 router.get('/', controllers.getPosts);
 router.get('/:id', controllers.getPost);
+router.get('/user/:userId', controllers.getPostsById);
 
 // Protected routes (authentication required)
 router.post('/', authMiddleware, controllers.publishPost); 
@@ -87,6 +88,32 @@ router.delete('/:id', authMiddleware, controllers.deletePost);
  *               type: array
  *               items:
  *                 type: object
+ */
+
+/**
+ * @swagger
+ * /user/{userId}:
+ *   get:
+ *     summary: Get all posts by a specific user
+ *     tags: [Posts]
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The user ID
+ *     responses:
+ *       200:
+ *         description: List of posts by the user
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *       404:
+ *         description: User or posts not found
  */
 
 /**
@@ -185,5 +212,6 @@ router.delete('/:id', authMiddleware, controllers.deletePost);
  *       404:
  *         description: Post not found
  */
+
 
 export default router;
