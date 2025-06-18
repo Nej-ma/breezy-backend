@@ -123,30 +123,30 @@ const searchUsers = async (req, res) => {
         }
 
         const searchQuery = q.trim();
-        
-        // to ensure minimum length for search
+          // to ensure minimum length for search
         if (searchQuery.length < 2) {
             return res.status(400).json({ 
                 error: 'Search query must be at least 2 characters long' 
             });
-        }        // Use MongoDB's $text search with the existing text index
+        }
+
+        // Create a regex for case-insensitive search
+        const searchRegex = new RegExp(searchQuery, 'i');
+
+        // Search in username and displayName
         const searchCriteria = {
-            $text: { 
-                $search: searchQuery,
-                $caseSensitive: false 
-            }
+            $or: [
+                { username: { $regex: searchRegex } },
+                { displayName: { $regex: searchRegex } }
+            ]
         };
 
         // Execute the search with pagination
         const users = await UserProfile.find(searchCriteria)
             .select('userId username displayName bio profilePicture followersCount followingCount')
-            .limit(parsedLimit)
-            .skip(parsedSkip)
-            .sort({ 
-                score: { $meta: 'textScore' }, // Tri par pertinence text search
-                followersCount: -1, 
-                username: 1 
-            });// Sort by popularity then alphabetically
+            .limit(parseInt(limit))
+            .skip(parseInt(skip))
+            .sort({ followersCount: -1, username: 1 }); // Sort by popularity then alphabetically
 
         // Count total for pagination
         const totalCount = await UserProfile.countDocuments(searchCriteria);
