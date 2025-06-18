@@ -18,12 +18,10 @@ const postSchema = new mongoose.Schema({
     type: String
   }],
   tags: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Tag'
+    type: String
   }],
   mentions: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+    type: String
   }],
   likesCount: {
     type: Number,
