@@ -1,5 +1,6 @@
 import { get } from "mongoose";
 import Comment from "../models/Comment.js";
+import Like from "../models/Like.js";
 import axios from 'axios';
 
 
@@ -12,7 +13,7 @@ const publishComment = async (req, res) => {
             return res.status(400).json({ message: 'Author, post, and content are required.' });
         }
 
-        const userId = req.user.id || req.user.userId;
+        const userId = req.user.userId;
         const userServiceUrl = process.env.USER_SERVICE_URL || 'http://localhost:8080/api/users';
         const { data: userData } = await axios.get(`${userServiceUrl}/id/${userId}`);
 
@@ -44,8 +45,6 @@ const getComment = async (req, res) => {
 
         // Fetch comments for the post, excluding deleted comments
         const comments = await Comment.find({ post: postId, isDeleted: false })
-            .populate('author', 'username profilePicture')
-            .populate('mentions', 'username profilePicture')
             .sort({ createdAt: -1 });
 
         res.status(200).json(comments);
@@ -57,8 +56,17 @@ const getComment = async (req, res) => {
 
 const updateComment = async (req, res) => {
     try {
+
         const commentId = req.params.id;
         const { content, mentions } = req.body;
+
+        const comment = await Comment.findById(commentId);
+        if (!comment) {
+            return res.status(404).json({ message: 'Comment not found.' });
+        }
+        if (comment.author.toString() !== req.user.userId) {
+            return res.status(403).json({ message: 'You are not authorized to update this comment.' });
+        }
 
         if (!content) {
             return res.status(400).json({ message: 'Content is required.' });
@@ -66,13 +74,10 @@ const updateComment = async (req, res) => {
 
         const updateFields = {};
         if (content !== undefined) updateFields.content = content;
-        if (content !== undefined) updateFields.mentions = mentions || [];
-        
+        if (mentions !== undefined) updateFields.mentions = mentions || [];
 
         // Find and update the comment
-        const updatedComment = await Comment.findByIdAndUpdate(
-            commentId,
-        );
+        const updatedComment = await Comment.findByIdAndUpdate(commentId, updateFields, { new: true });
 
         if (!updatedComment || updatedComment.isDeleted) {
             return res.status(404).json({ message: 'Comment not found.' });
@@ -88,6 +93,14 @@ const updateComment = async (req, res) => {
 const deleteComment = async (req, res) => {
     try {
         const commentId = req.params.id;
+
+        const comment = await Comment.findById(commentId);
+        if (!comment) {
+            return res.status(404).json({ message: 'Comment not found.' });
+        }
+        if (comment.author.toString() !== req.user.userId) {
+            return res.status(403).json({ message: 'You are not authorized to delete this comment.' });
+        }
 
         // Find and delete the comment
         const deletedComment = await Comment.findByIdAndUpdate(
@@ -110,7 +123,8 @@ const deleteComment = async (req, res) => {
 const updateCommentLikes = async (req, res) => {
     try {
         const commentId = req.params.id;
-        const { userId, action } = req.body; // action: 'like' or 'unlike'
+        const userId = req.user.userId; 
+        const { action } = req.body; // action: 'like' or 'unlike'
 
         if (!userId || !action) {
             return res.status(400).json({ message: 'User ID and action are required.' });
