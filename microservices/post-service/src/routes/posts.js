@@ -7,7 +7,7 @@ const router = express.Router();
 // Public routes (no authentication required)
 router.get('/', controllers.getPosts);
 router.get('/:id', controllers.getPost);
-router.get('/user/:userId', controllers.getPostsById);
+router.get('/user/:userId', controllers.getPostsByUserId);
 
 // Protected routes (authentication required)
 router.post('/', authMiddleware, controllers.publishPost); 
