@@ -3,6 +3,13 @@ import controllers from '../controllers/comments.controller.js';
 import authMiddleware from '../middleware/auth.middleware.js'; // Assure-toi que ce chemin est correct
 
 const router = express.Router();
+router.get('/comments/:postId', controllers.getComment);
+router.post('/comments/:postId', authMiddleware, controllers.publishComment);
+router.put('/comments/:id', authMiddleware, controllers.updateComment);
+router.put('/comments/:id/like', authMiddleware, controllers.updateCommentLikes);
+router.delete('/comments/:id', authMiddleware, controllers.deleteComment);
+
+
 
 /**
  * @swagger
@@ -42,7 +49,6 @@ const router = express.Router();
  *       404:
  *         description: Post not found
  */
-router.get('/comments/:postId', controllers.getComment);
 
 /**
  * @swagger
@@ -81,7 +87,6 @@ router.get('/comments/:postId', controllers.getComment);
  *       400:
  *         description: Invalid input
  */
-router.post('/comments/:postId', authMiddleware, controllers.publishComment);
 
 /**
  * @swagger
@@ -119,7 +124,6 @@ router.post('/comments/:postId', authMiddleware, controllers.publishComment);
  *       404:
  *         description: Comment not found
  */
-router.put('/comments/:id', authMiddleware, controllers.updateComment);
 
 /**
  * @swagger
@@ -142,7 +146,6 @@ router.put('/comments/:id', authMiddleware, controllers.updateComment);
  *       404:
  *         description: Comment not found
  */
-router.delete('/comments/:id', authMiddleware, controllers.deleteComment);
 
 /**
  * @swagger
@@ -177,6 +180,5 @@ router.delete('/comments/:id', authMiddleware, controllers.deleteComment);
  *       404:
  *         description: Comment not found
  */
-router.put('/comments/:id/like', authMiddleware, controllers.updateCommentLikes);
 
 export default router;
