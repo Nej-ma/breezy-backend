@@ -106,6 +106,15 @@ const searchUsers = async (req, res) => {
     try {
         const { q, limit = 10, skip = 0 } = req.query;
         
+        // Validate limit and skip parameters
+        const parsedLimit = parseInt(limit, 10);
+        const parsedSkip = parseInt(skip, 10);
+        if (isNaN(parsedLimit) || isNaN(parsedSkip) || parsedLimit < 1 || parsedLimit > 50 || parsedSkip < 0) {
+            return res.status(400).json({ 
+                error: 'Invalid parameters: "limit" must be between 1 and 50, and "skip" must be 0 or greater' 
+            });
+        }
+        
         // Validate the search query
         if (!q || q.trim().length === 0) {
             return res.status(400).json({ 
