@@ -93,18 +93,14 @@ import bcrypt from 'bcryptjs';
  *         updatedAt: "2023-01-02T00:00:00.000Z"
  */
 // Schema pour le User Service - UNIQUEMENT les données de profil
-const userProfileSchema = new mongoose.Schema({
-  userId: {
+const userProfileSchema = new mongoose.Schema({  userId: {
     type: String, // ID de l'utilisateur depuis l'Auth Service
     required: true,
-    unique: true,
-    index: true
-  },
-  // Données dupliquées pour faciliter les requêtes (eventual consistency)
+    unique: true
+  },// Données dupliquées pour faciliter les requêtes (eventual consistency)
   username: {
     type: String,
-    required: true,
-    index: true
+    required: true
   },
   displayName: {
     type: String,
@@ -149,7 +145,6 @@ const userProfileSchema = new mongoose.Schema({
 
 // Create indexes for better search performance
 userProfileSchema.index({ username: 'text', displayName: 'text' });
-userProfileSchema.index({ username: 1 });
 userProfileSchema.index({ displayName: 1 });
 userProfileSchema.index({ followersCount: -1 });
 

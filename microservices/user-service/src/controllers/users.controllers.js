@@ -120,17 +120,12 @@ const searchUsers = async (req, res) => {
             return res.status(400).json({ 
                 error: 'Search query must be at least 2 characters long' 
             });
-        }
-
-        // Create a regex for case-insensitive search
-        const searchRegex = new RegExp(searchQuery, 'i');
-
-        // Search in username and displayName
+        }        // Use MongoDB's $text search with the existing text index
         const searchCriteria = {
-            $or: [
-                { username: { $regex: searchRegex } },
-                { displayName: { $regex: searchRegex } }
-            ]
+            $text: { 
+                $search: searchQuery,
+                $caseSensitive: false 
+            }
         };
 
         // Execute the search with pagination
@@ -138,7 +133,11 @@ const searchUsers = async (req, res) => {
             .select('userId username displayName bio profilePicture followersCount followingCount')
             .limit(parseInt(limit))
             .skip(parseInt(skip))
-            .sort({ followersCount: -1, username: 1 }); // Sort by popularity then alphabetically
+            .sort({ 
+                score: { $meta: 'textScore' }, // Tri par pertinence text search
+                followersCount: -1, 
+                username: 1 
+            });// Sort by popularity then alphabetically
 
         // Count total for pagination
         const totalCount = await UserProfile.countDocuments(searchCriteria);
