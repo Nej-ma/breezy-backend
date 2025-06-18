@@ -23,10 +23,10 @@ const postSchema = new mongoose.Schema({
   mentions: [{
     type: String
   }],
-  likesCount: {
-    type: Number,
-    default: 0
-  },
+  likes: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
   commentsCount: {
     type: Number,
     default: 0

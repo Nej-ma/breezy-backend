@@ -1,6 +1,5 @@
 import { get } from "mongoose";
 import Comment from "../models/Comment.js";
-import Like from "../models/Like.js";
 import axios from 'axios';
 
 
@@ -123,11 +122,24 @@ const deleteComment = async (req, res) => {
 const updateCommentLikes = async (req, res) => {
     try {
         const commentId = req.params.id;
-        const userId = req.user.userId; 
-        const { action } = req.body; // action: 'like' or 'unlike'
+        const { userId } = req.body; // Get userId from body
 
-        if (!userId || !action) {
-            return res.status(400).json({ message: 'User ID and action are required.' });
+        if (!userId || !commentId) {
+            return res.status(400).json({ message: 'User ID and comment ID are required.' });
+        }
+
+        // Check if user exists
+        try {
+            const userServiceUrl = process.env.USER_SERVICE_URL || 'http://user-service:3002';
+            const response = await axios.get(`${userServiceUrl}/id/${userId}`);
+            
+            if (response.status !== 200) {
+                return res.status(404).json({ message: 'User not found.' });
+            }
+
+        } catch (error) {
+            console.error('Error fetching user:', error);
+            return res.status(500).json({ message: 'Internal server error while checking user.', error: error.message });
         }
 
         const comment = await Comment.findById(commentId);
@@ -135,33 +147,19 @@ const updateCommentLikes = async (req, res) => {
             return res.status(404).json({ message: 'Comment not found.' });
         }
 
-        const existingLike = await Like.findOne({
-            user: userId,
-            targetType: 'Comment',
-            targetId: commentId
-        });
+        const userIndex = comment.likes.indexOf(userId);
 
-        if (action === 'like') {
-            if (!existingLike) {
-                await Like.create({
-                    user: userId,
-                    targetType: 'Comment',
-                    targetId: commentId
-                });
-                comment.likesCount += 1;
-                await comment.save();
-            }
-        } else if (action === 'unlike') {
-            if (existingLike) {
-                await Like.deleteOne({ _id: existingLike._id });
-                comment.likesCount = Math.max(0, comment.likesCount - 1);
-                await comment.save();
-            }
+        if (userIndex !== -1) {
+            // User already liked, so remove the like
+            comment.likes.splice(userIndex, 1);
         } else {
-            return res.status(400).json({ message: 'Invalid action.' });
+            // User has not liked, so add the like
+            comment.likes.push(userId);
         }
 
-        res.status(200).json({ message: 'Comment likes updated successfully', comment });
+        await comment.save();
+
+        res.status(200).json({ message: 'Comment likes updated successfully', likes: comment.likes });
     } catch (error) {
         console.error('Error updating comment likes:', error);
         res.status(500).json({ message: 'Internal server error' });

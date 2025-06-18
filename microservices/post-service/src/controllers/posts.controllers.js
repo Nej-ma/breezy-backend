@@ -1,5 +1,6 @@
 import Post from '../models/Post.js';
-import Tag from '../models/Tag.js';
+
+import axios from 'axios';
 
 const publishPost = async (req, res) => {
     try {
@@ -136,6 +137,53 @@ const getPostsByUserId = async (req, res) => {
     }
 }
 
+const updatePostLikes = async (req, res) => {
+    try {
+        const postId = req.params.id;
+        const { userId } = req.body; // Get userId from body
+
+        if (!userId || !postId) {
+            return res.status(400).json({ message: 'User ID and post ID are required.' });
+        }
+
+        // Check if user exists
+        try {
+            const userServiceUrl = process.env.USER_SERVICE_URL || 'http://user-service:3002';
+            const response = await axios.get(`${userServiceUrl}/id/${userId}`);
+            
+            if (response.status !== 200) {
+                return res.status(404).json({ message: 'User not found.' });
+            }
+
+        } catch (error) {
+            console.error('Error fetching user:', error);
+            return res.status(500).json({ message: 'Internal server error while checking user.', error: error.message });
+        }
+
+        const post = await Post.findById(postId);
+        if (!post || post.isDeleted) {
+            return res.status(404).json({ message: 'Post not found.' });
+        }
+
+        const userIndex = post.likes.indexOf(userId);
+
+        if (userIndex !== -1) {
+            // User already liked, so remove the like
+            post.likes.splice(userIndex, 1);
+        } else {
+            // User has not liked, so add the like
+            post.likes.push(userId);
+        }
+
+        await post.save();
+
+        res.status(200).json({ message: 'Post likes updated successfully', likes: post.likes });
+    } catch (error) {
+        console.error('Error updating post likes:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+}
+
 export {
     publishPost,
     getPosts,
@@ -143,4 +191,5 @@ export {
     updatePost,
     deletePost,
     getPostsByUserId
+    updatePostLikes,
 };

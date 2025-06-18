@@ -12,6 +12,7 @@ router.get('/user/:userId', controllers.getPostsByUserId);
 // Protected routes (authentication required)
 router.post('/', authMiddleware, controllers.publishPost); 
 router.put('/:id', authMiddleware, controllers.updatePost); 
+router.put('/:id/like', authMiddleware, controllers.updatePostLikes);
 router.delete('/:id', authMiddleware, controllers.deletePost);
 
 /**
@@ -71,7 +72,7 @@ router.delete('/:id', authMiddleware, controllers.deletePost);
  *         description: Invalid input
  *       401:
  *         description: Unauthorized - Access token required
- */ 
+ */
 
 /**
  * @swagger
@@ -213,5 +214,38 @@ router.delete('/:id', authMiddleware, controllers.deletePost);
  *         description: Post not found
  */
 
+/**
+ * @swagger
+ * /{id}/like:
+ *   put:
+ *     summary: Like or unlike a post by ID
+ *     tags: [Posts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The post ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               userId:
+ *                 type: string
+ *                 description: The ID of the user liking or unliking the post
+ *     responses:
+ *       200:
+ *         description: Post like status updated
+ *       401:
+ *         description: Unauthorized - Access token required
+ *       404:
+ *         description: Post not found
+ */
 
 export default router;
