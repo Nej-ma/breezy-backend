@@ -97,26 +97,12 @@ services:
     ports:
       - "27020:27017"  # Pour MongoDB Compass
     networks:
-      - breezy-microservices-network
+      - breezy-microservices-network    
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
-
-  redis:
-    image: redis:7.2-alpine
-    container_name: breezy-redis
-    restart: unless-stopped
-    volumes:
-      - redis_data:/data
-    networks:
-      - breezy-microservices-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
 
   # =============
   # MICROSERVICES
@@ -329,7 +315,6 @@ volumes:
   mongodb_user_data:
   mongodb_post_data:
   mongodb_notification_data:
-  redis_data:
 
 networks:
   breezy-microservices-network:
