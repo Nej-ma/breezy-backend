@@ -123,7 +123,7 @@ router.put('/comments/:id', authMiddleware, controllers.updateComment);
 
 /**
  * @swagger
- * /{id}:
+ * /comments/{id}:
  *   delete:
  *     summary: Delete a comment by ID
  *     tags: [Comments]
