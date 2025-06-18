@@ -418,11 +418,6 @@ const updateUserRole = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
-    }    // Prevent self-demotion from admin
-    if (req.user.id.toString() === userId && req.user.role === ROLES.ADMIN && role !== ROLES.ADMIN) {
-      return res.status(400).json({ 
-        error: 'Cannot demote yourself from admin role'
-      });
     }
 
     // Check if current user can modify target user's role
