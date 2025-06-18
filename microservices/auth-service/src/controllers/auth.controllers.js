@@ -418,10 +418,8 @@ const updateUserRole = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
-    }
-
-    // Prevent self-demotion from admin
-    if (req.user.id === userId && req.user.role === ROLES.ADMIN && role !== ROLES.ADMIN) {
+    }    // Prevent self-demotion from admin
+    if (req.user.id.toString() === userId && req.user.role === ROLES.ADMIN && role !== ROLES.ADMIN) {
       return res.status(400).json({ 
         error: 'Cannot demote yourself from admin role'
       });
@@ -462,23 +460,21 @@ const updateUserRole = async (req, res) => {
 const suspendUser = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { duration, reason } = req.body; // duration in hours
-
-    // Find user
+    const { duration, reason } = req.body; // duration in hours    // Find user
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
-    }    // Prevent suspending admins (unless you're also admin)
-    if (user.role === ROLES.ADMIN && req.user.role !== ROLES.ADMIN) {
-      return res.status(403).json({ 
-        error: 'Cannot suspend an admin user'
+    }    // Prevent self-suspension (MUST BE FIRST CHECK!)
+    if (req.user.id.toString() === userId) {
+      return res.status(400).json({ 
+        error: 'Cannot suspend yourself'
       });
     }
 
-    // Prevent self-suspension
-    if (req.user.id === userId) {
-      return res.status(400).json({ 
-        error: 'Cannot suspend yourself'
+    // Prevent suspending admins (unless you're also admin)
+    if (user.role === ROLES.ADMIN && req.user.role !== ROLES.ADMIN) {
+      return res.status(403).json({ 
+        error: 'Cannot suspend an admin user'
       });
     }
 
