@@ -101,6 +101,72 @@ const getUsers = async (req, res) => {
     }
 }
 
+// Search users by username or display name
+const searchUsers = async (req, res) => {
+    try {
+        const { q, limit = 10, skip = 0 } = req.query;
+        
+        // Validate limit and skip parameters
+        const parsedLimit = parseInt(limit, 10);
+        const parsedSkip = parseInt(skip, 10);
+        if (isNaN(parsedLimit) || isNaN(parsedSkip) || parsedLimit < 1 || parsedLimit > 50 || parsedSkip < 0) {
+            return res.status(400).json({ 
+                error: 'Invalid parameters: "limit" must be between 1 and 50, and "skip" must be 0 or greater' 
+            });
+        }
+        
+        // Validate the search query
+        if (!q || q.trim().length === 0) {
+            return res.status(400).json({ 
+                error: 'Search query parameter "q" is required' 
+            });
+        }
+
+        const searchQuery = q.trim();
+          // to ensure minimum length for search
+        if (searchQuery.length < 2) {
+            return res.status(400).json({ 
+                error: 'Search query must be at least 2 characters long' 
+            });
+        }
+
+        // Create a regex for case-insensitive search
+        const searchRegex = new RegExp(searchQuery, 'i');
+
+        // Search in username and displayName
+        const searchCriteria = {
+            $or: [
+                { username: { $regex: searchRegex } },
+                { displayName: { $regex: searchRegex } }
+            ]
+        };
+
+        // Execute the search with pagination
+        const users = await UserProfile.find(searchCriteria)
+            .select('userId username displayName bio profilePicture followersCount followingCount')
+            .limit(parseInt(limit))
+            .skip(parseInt(skip))
+            .sort({ followersCount: -1, username: 1 }); // Sort by popularity then alphabetically
+
+        // Count total for pagination
+        const totalCount = await UserProfile.countDocuments(searchCriteria);
+
+        res.json({
+            users,
+            pagination: {
+                total: totalCount,
+                limit: parseInt(limit),
+                skip: parseInt(skip),
+                hasMore: (parseInt(skip) + parseInt(limit)) < totalCount
+            },
+            searchQuery: searchQuery
+        });
+    } catch (error) {
+        console.error('❌ Erreur recherche utilisateurs:', error);
+        res.status(500).json({ error: 'Server error during search' });
+    }
+}
+
 // export 
 export {
     getUsers,
@@ -108,5 +174,6 @@ export {
     createAccount,
     validateEmail,
     createUserProfile,
-    getUserById
+    getUserById,
+    searchUsers
 };
