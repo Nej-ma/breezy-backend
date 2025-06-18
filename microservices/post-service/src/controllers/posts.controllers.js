@@ -66,6 +66,14 @@ const updatePost = async (req, res) => {
         const postId = req.params.id;
         const { content, images, videos, tags, mentions, visibility } = req.body;
 
+        const post = await Post.findById(postId);
+        if (!post) {
+            return res.status(404).json({ message: 'Post not found.' });
+        }
+        if (post.author.toString() !== req.user.userId) {
+            return res.status(403).json({ message: 'You are not authorized to update this post.' });
+        } 
+
         // Dynamically build the update object
         if (!content && !images && !videos && !tags && !mentions && !visibility) {
             return res.status(400).json({ message: 'At least one field must be provided for update.' });
@@ -94,6 +102,14 @@ const updatePost = async (req, res) => {
 const deletePost = async (req, res) => {
     try {
         const postId = req.params.id;
+
+        const post = await Post.findById(postId);
+        if (!post) {
+            return res.status(404).json({ message: 'Post not found.' });
+        }
+        if (post.author.toString() !== req.user.userId) {
+            return res.status(403).json({ message: 'You are not authorized to update this post.' });
+        } 
     
         const deletedPost = await Post.findByIdAndUpdate(postId, { isDeleted: true }, { new: true });
         if (!deletedPost) {
