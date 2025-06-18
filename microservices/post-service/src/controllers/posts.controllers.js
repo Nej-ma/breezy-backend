@@ -122,10 +122,25 @@ const deletePost = async (req, res) => {
     }
 }
 
+const getPostsByUserId = async (req, res) => {
+    try {
+        const userId = req.params.userId;
+        const posts = await Post.find({ author: userId, isDeleted: false })
+            .populate('tags', 'name')
+            .sort({ createdAt: -1 });
+
+        res.status(200).json(posts);
+    } catch (error) {
+        console.error('Error fetching posts by user ID:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+}
+
 export {
     publishPost,
     getPosts,
     getPost,
     updatePost,
-    deletePost
+    deletePost,
+    getPostsByUserId
 };
