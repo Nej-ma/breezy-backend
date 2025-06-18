@@ -34,10 +34,100 @@ const router = express.Router();
  *                     type: string
  *                   followersCount:
  *                     type: integer
+ *                   followingCount:
+ *                     type: integer
+ *                   postsCount:
+ *                     type: integer
  *       404:
  *         description: No user profiles found
  */
 router.get('/', controllers.getUsers);
+
+/**
+ * @swagger
+ * /search:
+ *   get:
+ *     summary: Search for users by username or display name
+ *     tags: [Users]
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         required: true
+ *         description: Search query (minimum 2 characters)
+ *         schema:
+ *           type: string
+ *           minLength: 2
+ *       - in: query
+ *         name: limit
+ *         required: false
+ *         description: Maximum number of results to return
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *           default: 10
+ *       - in: query
+ *         name: skip
+ *         required: false
+ *         description: Number of results to skip (for pagination)
+ *         schema:
+ *           type: integer
+ *           minimum: 0
+ *           default: 0
+ *     responses:
+ *       200:
+ *         description: Search results
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 users:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       userId:
+ *                         type: string
+ *                       username:
+ *                         type: string
+ *                       displayName:
+ *                         type: string
+ *                       bio:
+ *                         type: string
+ *                       profilePicture:
+ *                         type: string
+ *                       followersCount:
+ *                         type: integer
+ *                       followingCount:
+ *                         type: integer
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     total:
+ *                       type: integer
+ *                     limit:
+ *                       type: integer
+ *                     skip:
+ *                       type: integer
+ *                     hasMore:
+ *                       type: boolean
+ *                 searchQuery:
+ *                   type: string
+ *       400:
+ *         description: Invalid search query
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "Search query parameter 'q' is required"
+ *       500:
+ *         description: Server error
+ */
+router.get('/search', controllers.searchUsers);
 
 /**
  * @swagger

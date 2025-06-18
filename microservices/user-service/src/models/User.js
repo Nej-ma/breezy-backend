@@ -147,6 +147,12 @@ const userProfileSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Create indexes for better search performance
+userProfileSchema.index({ username: 'text', displayName: 'text' });
+userProfileSchema.index({ username: 1 });
+userProfileSchema.index({ displayName: 1 });
+userProfileSchema.index({ followersCount: -1 });
+
 // Hash password before saving (supprimé car plus nécessaire)
 // userProfileSchema.pre('save', async function(next) {
 //   if (!this.isModified('password')) return next();
