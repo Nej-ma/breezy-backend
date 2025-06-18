@@ -140,8 +140,8 @@ const searchUsers = async (req, res) => {
         // Execute the search with pagination
         const users = await UserProfile.find(searchCriteria)
             .select('userId username displayName bio profilePicture followersCount followingCount')
-            .limit(parseInt(limit))
-            .skip(parseInt(skip))
+            .limit(parsedLimit)
+            .skip(parsedSkip)
             .sort({ 
                 score: { $meta: 'textScore' }, // Tri par pertinence text search
                 followersCount: -1, 
