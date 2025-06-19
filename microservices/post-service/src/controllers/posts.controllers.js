@@ -190,6 +190,6 @@ export {
     getPost,
     updatePost,
     deletePost,
-    getPostsByUserId
-    updatePostLikes,
+    getPostsByUserId,
+    updatePostLikes
 };
