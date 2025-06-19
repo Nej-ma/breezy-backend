@@ -11,6 +11,8 @@ import swaggerUi from 'swagger-ui-express';
 
 // Import des routes
 import userRoutes from './routes/users.js';
+import followRoutes from './routes/follows.js';
+
 
 // Configuration de l'environnement
 dotenv.config();
@@ -152,6 +154,8 @@ app.get('/health', (req, res) => {
 
 // Routes - Sans préfixe car l'API Gateway ajoute déjà /api/users
 app.use('/', userRoutes);
+app.use('/', followRoutes);
+
 
 // Routes de test pour debug
 app.post('/test', (req, res) => {
