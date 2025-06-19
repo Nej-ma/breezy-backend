@@ -167,6 +167,69 @@ const searchUsers = async (req, res) => {
     }
 }
 
+// GET current user profile
+const getCurrentUserProfile = async (req, res) => {
+    try {
+        if (!req.user || !req.user.userId) {
+            return res.status(401).json({ error: 'Unauthorized: user not authenticated' });
+        }
+        const userProfile = await UserProfile.findOne({ userId: req.user.userId }).select('-__v -updatedAt');
+        if (!userProfile) {
+            return res.status(404).json({ error: 'User profile not found' });
+        }
+        res.status(200).json({ profile: userProfile });
+    } catch (error) {
+        console.error('Get current user profile error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+const updateUserProfile = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { profilePicture, coverPicture, displayName, bio, location, website } = req.body;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized: user not authenticated' });
+    }
+    // Prépare l'objet de mise à jour uniquement avec les champs fournis
+    const updateFields = {};
+    if (profilePicture !== undefined) updateFields.profilePicture = profilePicture;
+    if (coverPicture !== undefined) updateFields.coverPicture = coverPicture;
+    if (displayName !== undefined) {
+      // Check if displayName is already taken by another user
+      const existing = await UserProfile.findOne({ displayName, userId: { $ne: userId } });
+      if (existing) {
+        return res.status(409).json({ error: 'Display name already taken' });
+      }
+      updateFields.displayName = displayName;
+    }
+    if (bio !== undefined) updateFields.bio = bio;
+    if (location !== undefined) updateFields.location = location;
+    if (website !== undefined) updateFields.website = website;
+
+    if (Object.keys(updateFields).length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    const updatedUser = await UserProfile.findOneAndUpdate(
+      { userId },
+      { $set: updateFields },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      message: 'Profile updated successfully',
+      user: updatedUser
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // export 
 export {
     getUsers,
@@ -175,5 +238,7 @@ export {
     validateEmail,
     createUserProfile,
     getUserById,
-    searchUsers
+    searchUsers,
+    getCurrentUserProfile,
+    updateUserProfile
 };
