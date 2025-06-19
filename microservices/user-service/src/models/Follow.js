@@ -2,11 +2,11 @@ import mongoose from 'mongoose';
 
 const followSchema = new mongoose.Schema({
   follower: {
-    type: String, // Changé de ObjectId vers String
+    type: String, 
     required: true
   },
   following: {
-    type: String, // Changé de ObjectId vers String
+    type: String, 
     required: true
   },
 }, {
