@@ -33,13 +33,63 @@ const publishPost = async (req, res) => {
 
 const getPosts = async (req, res) => {
     try {
-        const posts = await Post.find({ isDeleted: false })
-            .populate('tags', 'name')
-            .sort({ createdAt: -1 });
-    
-        res.status(200).json(posts);
+        const { filter } = req.query;
+        const userId = req.user.userId;
+
+
+        if (filter === 'following') {
+            const userServiceUrl = process.env.USER_SERVICE_URL ;
+            const authToken = req.headers.authorization;
+
+            console.log(`${userServiceUrl}/${userId}/following`);
+
+            const followingResponse = await axios.get(`${userServiceUrl}/${userId}/following`, {
+                headers: {
+                    'Authorization': authToken,
+                    'Content-Type': 'application/json'
+                },
+                timeout: 5000
+            });
+
+            const followingUserIds = followingResponse.data.map(item => item.following);
+            const posts = await Post.find({ author: { $in: followingUserIds }, isDeleted: false })
+                .sort({ createdAt: -1 });
+
+            // Filter posts based on visibility
+            const filteredPosts = [];
+            for (const post of posts) {
+                if (post.visibility === 'public') {
+                    filteredPosts.push(post);
+                } else if (post.visibility === 'followers') {
+                    try {
+                        const followerResponse = await axios.get(`${userServiceUrl}/${post.author}/is-following`, {
+                            headers: {
+                                'Authorization': authToken,
+                                'Content-Type': 'application/json'
+                            },
+                            timeout: 5000
+                        });
+                        if (followerResponse.data.isFollowing) {
+                            filteredPosts.push(post);
+                        }
+                    } catch (error) {
+                        console.error('Error checking if author follows user:', error);
+                    }
+                }
+            }
+            
+            res.status(200).json({
+                posts: filteredPosts
+            });
+        }
+        else{
+            const posts = await Post.find({ isDeleted: false })
+                .populate('tags', 'name')
+                .sort({ createdAt: -1 });
+
+            res.status(200).json({ posts });
+        }
     } catch (error) {
-        console.error('Error fetching posts:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 }
