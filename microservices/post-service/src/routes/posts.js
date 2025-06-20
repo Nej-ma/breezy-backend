@@ -4,12 +4,11 @@ import authMiddleware from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
-// Public routes (no authentication required)
-router.get('/', controllers.getPosts);
-router.get('/:id', controllers.getPost);
-router.get('/user/:userId', controllers.getPostsByUserId);
 
 // Protected routes (authentication required)
+router.get('/', authMiddleware, controllers.getPosts);
+router.get('/:id', authMiddleware, controllers.getPost);
+router.get('/user/:userId', authMiddleware, controllers.getPostsByUserId);
 router.post('/', authMiddleware, controllers.publishPost); 
 router.put('/:id', authMiddleware, controllers.updatePost); 
 router.put('/:id/like', authMiddleware, controllers.updatePostLikes);
@@ -79,17 +78,35 @@ router.put('/:id/visibility', authMiddleware, controllers.updateVisibility);
  * @swagger
  * /:
  *   get:
- *     summary: Get all posts
+ *     summary: Get all posts with optional filtering
  *     tags: [Posts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: filter
+ *         schema:
+ *           type: string
+ *           enum: [all, following]
+ *         description: Filter posts by relationship
  *     responses:
  *       200:
  *         description: List of posts
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items:
- *                 type: object
+ *               type: object
+ *               properties:
+ *                 posts:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                 filter:
+ *                   type: string
+ *                 count:
+ *                   type: integer
+ *       401:
+ *         description: Unauthorized - Access token required
  */
 
 /**
@@ -98,6 +115,8 @@ router.put('/:id/visibility', authMiddleware, controllers.updateVisibility);
  *   get:
  *     summary: Get all posts by a specific user
  *     tags: [Posts]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: userId
@@ -114,6 +133,8 @@ router.put('/:id/visibility', authMiddleware, controllers.updateVisibility);
  *               type: array
  *               items:
  *                 type: object
+ *       401:
+ *         description: Unauthorized - Access token required
  *       404:
  *         description: User or posts not found
  */
@@ -124,6 +145,8 @@ router.put('/:id/visibility', authMiddleware, controllers.updateVisibility);
  *   get:
  *     summary: Get a post by ID
  *     tags: [Posts]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -134,6 +157,8 @@ router.put('/:id/visibility', authMiddleware, controllers.updateVisibility);
  *     responses:
  *       200:
  *         description: Post found
+ *       401:
+ *         description: Unauthorized - Access token required
  *       404:
  *         description: Post not found
  */
