@@ -184,6 +184,33 @@ const updatePostLikes = async (req, res) => {
     }
 }
 
+const updateVisibility = async (req, res) => {
+    try {
+        const postId = req.params.id;
+        const { visibility } = req.body;
+
+        const post = await Post.findById(postId);
+        if (!post) {
+            return res.status(404).json({ message: 'Post not found.' });
+        }
+        if (post.author.toString() !== req.user.userId) {
+            return res.status(403).json({ message: 'You are not authorized to delete this post.' });
+        } 
+
+        if (!visibility || !['public', 'followers', 'private'].includes(visibility)) {
+            return res.status(400).json({ message: 'Invalid visibility status.' });
+        }
+        
+        post.visibility = visibility;
+        await post.save();
+
+        res.status(200).json({ message: 'Post visibility updated successfully', post });
+    } catch (error) {
+        console.error('Error updating post visibility:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+}
+
 export {
     publishPost,
     getPosts,
@@ -191,5 +218,6 @@ export {
     updatePost,
     deletePost,
     getPostsByUserId,
-    updatePostLikes
+    updatePostLikes,
+    updateVisibility
 };

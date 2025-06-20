@@ -14,6 +14,7 @@ router.post('/', authMiddleware, controllers.publishPost);
 router.put('/:id', authMiddleware, controllers.updatePost); 
 router.put('/:id/like', authMiddleware, controllers.updatePostLikes);
 router.delete('/:id', authMiddleware, controllers.deletePost);
+router.put('/:id/visibility', authMiddleware, controllers.updateVisibility);
 
 /**
  * @swagger
@@ -242,6 +243,43 @@ router.delete('/:id', authMiddleware, controllers.deletePost);
  *     responses:
  *       200:
  *         description: Post like status updated
+ *       401:
+ *         description: Unauthorized - Access token required
+ *       404:
+ *         description: Post not found
+ */
+
+/**
+ * @swagger
+ * /{id}/visibility:
+ *   put:
+ *     summary: Update post visibility by ID
+ *     tags: [Posts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The post ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               visibility:
+ *                 type: string
+ *                 enum: [public, private, friends]
+ *                 description: The new visibility setting for the post
+ *     responses:
+ *       200:
+ *         description: Post visibility updated successfully
+ *       400:
+ *         description: Invalid visibility value
  *       401:
  *         description: Unauthorized - Access token required
  *       404:
