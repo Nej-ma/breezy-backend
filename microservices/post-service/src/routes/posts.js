@@ -13,7 +13,6 @@ router.post('/', authMiddleware, controllers.publishPost);
 router.put('/:id', authMiddleware, controllers.updatePost); 
 router.put('/:id/like', authMiddleware, controllers.updatePostLikes);
 router.delete('/:id', authMiddleware, controllers.deletePost);
-router.put('/:id/visibility', authMiddleware, controllers.updateVisibility);
 
 /**
  * @swagger
