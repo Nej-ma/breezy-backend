@@ -7,11 +7,7 @@ import swaggerUi from 'swagger-ui-express';
 const app = express();
 const PORT = process.env.PORT || 3005;
 
-// Configuration CORS
-app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:80'],
-  credentials: true
-}));
+// CORS géré par Traefik - pas besoin de configuration ici
 
 app.use(express.json());
 

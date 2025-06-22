@@ -86,10 +86,8 @@ mongoose.connection.on('error', (error) => {
 
 // Middlewares de sécurité
 app.use(helmet());
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true
-}));
+
+// CORS géré par Traefik - pas besoin de configuration ici
 
 // Rate limiting
 const limiter = rateLimit({
