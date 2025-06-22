@@ -10,9 +10,11 @@ http:
           - PUT
           - DELETE
           - PATCH
-          - OPTIONS
+          - OPTIONS        
         accessControlAllowOriginList:
           - "http://localhost:3000"
+          - "https://*.trycloudflare.com"
+          - "https://*.ngrok-free.app"
         accessControlAllowCredentials: true
         accessControlAllowHeaders:
           - "Authorization"
