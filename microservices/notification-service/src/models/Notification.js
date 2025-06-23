@@ -25,10 +25,14 @@ const notificationSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     required: true,
     refPath: 'targetType'
-  },
-  message: {
+  },  message: {
     type: String,
-    required: true
+    required: true,
+    maxLength: 500
+  },
+  data: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
   },
   isRead: {
     type: Boolean,
