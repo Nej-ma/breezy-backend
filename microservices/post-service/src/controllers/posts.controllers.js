@@ -180,23 +180,6 @@ const filterPostsByVisibility = async (posts, currentUserId, userServiceUrl, aut
     return filteredPosts;
 };
 
-const getPost = async (req, res) => {
-    try {
-        const postId = req.params.id;
-    
-        const post = await Post.findById(postId)
-            .populate('tags', 'name')
-    
-        if (!post || post.isDeleted) {
-            return res.status(404).json({ message: 'Post not found.' });
-        }
-    
-        res.status(200).json(post);
-    } catch (error) {
-        console.error('Error fetching post:', error);
-        res.status(500).json({ message: 'Internal server error' });
-    }
-}
 
 const updatePost = async (req, res) => {
     try {
