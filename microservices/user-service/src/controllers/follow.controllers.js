@@ -97,8 +97,8 @@ const isFollowingUser = async (req, res) => {
     try {
         const { userId } = req.params;
         const follow = await Follow.findOne({ 
-            follower: req.user.id, 
-            following: userId 
+            follower: userId, 
+            following: req.user.id
         });
         res.status(200).json({ isFollowing: !!follow });
     } catch (error) {
