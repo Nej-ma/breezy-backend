@@ -7,8 +7,6 @@ const router = express.Router();
 
 // Protected routes (authentication required)
 router.get('/', authMiddleware, controllers.getPosts);
-router.get('/:id', authMiddleware, controllers.getPost);
-router.get('/user/:userId', authMiddleware, controllers.getPostsByUserId);
 router.post('/', authMiddleware, controllers.publishPost); 
 router.put('/:id', authMiddleware, controllers.updatePost); 
 router.put('/:id/like', authMiddleware, controllers.updatePostLikes);
@@ -77,90 +75,43 @@ router.delete('/:id', authMiddleware, controllers.deletePost);
  * @swagger
  * /:
  *   get:
- *     summary: Get all posts with optional filtering
+ *     summary: Get posts with various filtering options
  *     tags: [Posts]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: query
+ *         name: id
+ *         schema:
+ *           type: string
+ *         description: Get a specific post by ID
+ *         required: false
+ *         example: "6853c06e1bc5294ffc169bdc"
+ *       - in: query
  *         name: filter
  *         schema:
  *           type: string
- *           enum: [all, following]
- *         description: Filter posts by relationship
- *     responses:
- *       200:
- *         description: List of posts
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 posts:
- *                   type: array
- *                   items:
- *                     type: object
- *                 filter:
- *                   type: string
- *                 count:
- *                   type: integer
- *       401:
- *         description: Unauthorized - Access token required
- */
-
-/**
- * @swagger
- * /user/{userId}:
- *   get:
- *     summary: Get all posts by a specific user
- *     tags: [Posts]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: userId
- *         required: true
+ *           enum: [following]
+ *         description: Filter posts by relationship (following users)
+ *         required: false
+ *       - in: query
+ *         name: author
  *         schema:
  *           type: string
- *         description: The user ID
+ *         description: Filter posts by specific author ID
+ *         required: false
+ *         example: "6853c06e1bc5294ffc169bdc"
  *     responses:
  *       200:
- *         description: List of posts by the user
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 type: object
- *       401:
- *         description: Unauthorized - Access token required
+ *         description: Posts retrieved successfully
+ *       403:
+ *         description: Access denied for specific post
  *       404:
- *         description: User or posts not found
+ *         description: Post not found (when using id parameter)
+ *       500:
+ *         description: Internal server error
  */
 
-/**
- * @swagger
- * /{id}:
- *   get:
- *     summary: Get a post by ID
- *     tags: [Posts]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         description: The post ID
- *     responses:
- *       200:
- *         description: Post found
- *       401:
- *         description: Unauthorized - Access token required
- *       404:
- *         description: Post not found
- */
 
 /**
  * @swagger
