@@ -56,9 +56,10 @@ const getPosts = async (req, res) => {
                 .sort({ createdAt: -1 });
 
             // Filter posts based on visibility
-            const visibilityChecks = posts.map(async (post) => {
+            const filteredPosts = [];
+            for (const post of posts) {
                 if (post.visibility === 'public') {
-                    return post;
+                    filteredPosts.push(post);
                 } else if (post.visibility === 'followers') {
                     try {
                         const followerResponse = await axios.get(`${userServiceUrl}/${post.author}/is-following`, {
