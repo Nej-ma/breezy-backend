@@ -222,7 +222,7 @@ const createUser = async (req, res) => {
     if (!passwordValidation.isValid) {
       return res.status(400).json({
         error: 'Invalid password',
-        details: passwordValidation.errors
+        requirements: passwordValidation.errors
       });
     }
 
