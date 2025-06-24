@@ -7,6 +7,7 @@ const router = express.Router();
 
 // Protected routes (authentication required)
 router.get('/', authMiddleware, controllers.getPosts);
+router.get('/search', authMiddleware, controllers.searchPostsByTags);
 router.post('/', authMiddleware, controllers.publishPost); 
 router.put('/:id', authMiddleware, controllers.updatePost); 
 router.put('/:id/like', authMiddleware, controllers.updatePostLikes);
@@ -188,6 +189,104 @@ router.delete('/:id', authMiddleware, controllers.deletePost);
  *         description: Unauthorized - Access token required
  *       404:
  *         description: Post not found
+ */
+
+/**
+ * @swagger
+ * /search:
+ *   get:
+ *     summary: Search posts by tags
+ *     tags: [Posts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: tags
+ *         required: true
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: string
+ *           minItems: 1
+ *         style: form
+ *         explode: true
+ *         description: Tags to search for (without #). Can be provided as multiple query parameters (?tags=javascript&tags=react) or comma-separated (?tags=javascript,react)
+ *         example: ["javascript", "react"]
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *           default: 10
+ *         description: Maximum number of results to return
+ *         required: false
+ *       - in: query
+ *         name: skip
+ *         schema:
+ *           type: integer
+ *           minimum: 0
+ *           default: 0
+ *         description: Number of results to skip for pagination
+ *         required: false
+ *     responses:
+ *       200:
+ *         description: Posts found successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 posts:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       _id:
+ *                         type: string
+ *                       author:
+ *                         type: string
+ *                       content:
+ *                         type: string
+ *                       tags:
+ *                         type: array
+ *                         items:
+ *                           type: string
+ *                       visibility:
+ *                         type: string
+ *                         enum: [public, followers, private]
+ *                       createdAt:
+ *                         type: string
+ *                         format: date-time
+ *                       updatedAt:
+ *                         type: string
+ *                         format: date-time
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     currentPage:
+ *                       type: integer
+ *                     totalPages:
+ *                       type: integer
+ *                     totalResults:
+ *                       type: integer
+ *                     limit:
+ *                       type: integer
+ *                     skip:
+ *                       type: integer
+ *                 searchCriteria:
+ *                   type: object
+ *                   properties:
+ *                     tags:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *       400:
+ *         description: Invalid input - tags parameter required or invalid format
+ *       401:
+ *         description: Unauthorized - Access token required
+ *       500:
+ *         description: Internal server error
  */
 
 /**

@@ -278,10 +278,85 @@ const updatePostLikes = async (req, res) => {
 }
 
 
+const searchPostsByTags = async (req, res) => {
+    try {
+        const { tags, limit = 10, skip = 0 } = req.query;
+        const userId = req.user.userId;
+        const userServiceUrl = process.env.USER_SERVICE_URL;
+        const authToken = req.headers.authorization;
+
+        // Validation des paramètres
+        if (!tags) {
+            return res.status(400).json({ message: 'Tags parameter is required.' });
+        }
+
+        // Parse tags - support both ?tags=tag1&tags=tag2 and ?tags=tag1,tag2
+        let tagsArray = [];
+        if (Array.isArray(tags)) {
+            tagsArray = tags;
+        } else if (typeof tags === 'string') {
+            tagsArray = tags.includes(',') ? tags.split(',') : [tags];
+        }
+
+        // Nettoyage des tags (enlever espaces, convertir en minuscules)
+        tagsArray = tagsArray.map(tag => tag.trim().toLowerCase()).filter(tag => tag.length > 0);
+
+        if (tagsArray.length === 0) {
+            return res.status(400).json({ message: 'At least one valid tag is required.' });
+        }
+
+        // Validation des limites
+        const parsedLimit = Math.min(Math.max(parseInt(limit) || 10, 1), 50);
+        const parsedSkip = Math.max(parseInt(skip) || 0, 0);
+
+        // Recherche des posts avec au moins un des tags (recherche insensible à la casse)
+        const posts = await Post.find({
+            tags: { $in: tagsArray.map(tag => new RegExp(`^${tag}$`, 'i')) },
+            isDeleted: false
+        })
+        .sort({ createdAt: -1 })
+        .skip(parsedSkip)
+        .limit(parsedLimit + 100) // On récupère plus pour filtrer par visibilité après
+        .populate('tags', 'name');
+
+        // Filtrage par visibilité
+        const filteredPosts = await filterPostsByVisibility(posts, userId, userServiceUrl, authToken);
+        
+        // Application finale de la limite après filtrage
+        const finalPosts = filteredPosts.slice(0, parsedLimit);
+
+        // Compter le total pour la pagination
+        const totalCount = await Post.countDocuments({
+            tags: { $in: tagsArray.map(tag => new RegExp(`^${tag}$`, 'i')) },
+            isDeleted: false
+        });
+
+        res.status(200).json({
+            posts: finalPosts,
+            pagination: {
+                currentPage: Math.floor(parsedSkip / parsedLimit) + 1,
+                totalPages: Math.ceil(totalCount / parsedLimit),
+                totalResults: totalCount,
+                limit: parsedLimit,
+                skip: parsedSkip
+            },
+            searchCriteria: {
+                tags: tagsArray
+            }
+        });
+
+    } catch (error) {
+        console.error('Error searching posts by tags:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+
 export {
     publishPost,
     getPosts,
     updatePost,
     deletePost,
     updatePostLikes,
+    searchPostsByTags,
 };
