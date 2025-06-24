@@ -121,11 +121,11 @@ const deleteComment = async (req, res) => {
 
 const updateCommentLikes = async (req, res) => {
     try {
-        const commentId = req.params.id;
-        const { userId } = req.body; // Get userId from body
-
-        if (!userId || !commentId) {
-            return res.status(400).json({ message: 'User ID and comment ID are required.' });
+        const userId = req.user.id;
+        const commentId  = req.params.id; // Get comment id from params
+        console.log('params:', commentId);
+        if ( !commentId) {
+            return res.status(400).json({ message: 'comment ID is required.' });
         }
 
         // Check if user exists
