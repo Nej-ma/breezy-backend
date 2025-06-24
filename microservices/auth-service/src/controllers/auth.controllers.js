@@ -4,6 +4,7 @@ import axios from 'axios';
 import User from '../models/User.js';
 import * as emailService from '../services/email.js';
 import { ROLES, isValidRole, canModifyUser } from '../utils/roles.js';
+import { validatePassword } from '../utils/passwordValidator.js';
 
 // Générer les tokens JWT
 const generateTokens = (userId, role) => {
@@ -185,6 +186,13 @@ const resetPassword = async (req, res) => {
       return res.status(401).json({ error: 'Invalid token' });
     }
 
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.isValid) {
+      return res.status(400).json({
+        error: 'New password does not meet requirements',
+        requirements: passwordValidation.errors
+      });
+    }
     // Changer le mot de passe
     user.password = newPassword;
     user.passwordResetToken = '';
@@ -208,6 +216,14 @@ const createUser = async (req, res) => {
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ error: 'Email already in use' });
+    }
+
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      return res.status(400).json({
+        error: 'Invalid password',
+        requirements: passwordValidation.errors
+      });
     }
 
     // Créer le token de vérification
