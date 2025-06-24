@@ -102,11 +102,7 @@ const getPosts = async (req, res) => {
 
             const filteredPosts = await filterPostsByVisibility(posts, userId, userServiceUrl, authToken);
             
-            return res.status(200).json({
-                posts: filteredPosts,
-                filter: 'following',
-                count: filteredPosts.length
-            });
+            return res.status(200).json(filteredPosts);
         }
 
         if (author) {
@@ -119,12 +115,7 @@ const getPosts = async (req, res) => {
 
             const filteredPosts = await filterPostsByVisibility(posts, userId, userServiceUrl, authToken);
 
-            return res.status(200).json({ 
-                posts: filteredPosts,
-                filter: 'author',
-                author: author,
-                count: filteredPosts.length
-            });
+            return res.status(200).json(filteredPosts);
         }
 
         const posts = await Post.find({ isDeleted: false })
@@ -133,11 +124,7 @@ const getPosts = async (req, res) => {
 
         const filteredPosts = await filterPostsByVisibility(posts, userId, userServiceUrl, authToken);
 
-        return res.status(200).json({ 
-            posts: filteredPosts,
-            filter: 'all',
-            count: filteredPosts.length
-        });
+        return res.status(200).json( filteredPosts );
 
     } catch (error) {
         console.error('Error fetching posts:', error);
