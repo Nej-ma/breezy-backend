@@ -38,6 +38,12 @@ import bcrypt from 'bcryptjs';
  *         coverPicture:
  *           type: string
  *           description: URL of the user's cover picture
+ *         location:
+ *           type: string
+ *           description: The user's location
+ *         website:
+ *           type: string
+ *           description: The user's website URL
  *         isVerified:
  *           type: boolean
  *           description: Whether the user is verified
@@ -81,6 +87,8 @@ import bcrypt from 'bcryptjs';
  *         bio: "Software developer and tech enthusiast."
  *         profilePicture: "https://example.com/profile.jpg"
  *         coverPicture: "https://example.com/cover.jpg"
+ *         location: "New York, USA"
+ *         website: "https://johndoe.com"
  *         isVerified: true
  *         role: "user"
  *         isActive: true
@@ -120,6 +128,16 @@ const userProfileSchema = new mongoose.Schema({  userId: {
   },
   coverPicture: {
     type: String,
+    default: ''
+  },
+  location: {
+    type: String,
+    maxLength: 100,
+    default: ''
+  },
+  website: {
+    type: String,
+    maxLength: 200,
     default: ''
   },
   followersCount: {

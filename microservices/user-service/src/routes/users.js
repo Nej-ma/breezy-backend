@@ -131,7 +131,7 @@ router.get('/search', controllers.searchUsers);
 
 /**
  * @swagger
- * /{username}:
+ * /username/{username}:
  *   get:
  *     summary: Retrieve a user profile by username
  *     tags: [Users]
@@ -162,6 +162,10 @@ router.get('/search', controllers.searchUsers);
  *                   type: string
  *                 coverPicture:
  *                   type: string
+ *                 location:
+ *                   type: string
+ *                 website:
+ *                   type: string
  *                 followersCount:
  *                   type: integer
  *                 followingCount:
@@ -171,7 +175,7 @@ router.get('/search', controllers.searchUsers);
  *       404:
  *         description: User profile not found
  */
-router.get('/:username', controllers.getUserByUsername);
+router.get('/username/:username', controllers.getUserByUsername);
 
 /**
  * @swagger
@@ -206,6 +210,10 @@ router.get('/:username', controllers.getUserByUsername);
  *                   type: string
  *                 coverPicture:
  *                   type: string
+ *                 location:
+ *                   type: string
+ *                 website:
+ *                   type: string
  *                 followersCount:
  *                   type: integer
  *                 followingCount:
@@ -239,12 +247,7 @@ router.post("/activate/:token", controllers.validateEmail);
  *       401:
  *         description: Unauthorized
  */
-router.get('/profile', authMiddleware, (req, res) => {
-  res.json({
-    message: 'Current user profile',
-    user: req.user
-  });
-});
+router.get('/profile', authMiddleware, controllers.getCurrentUserProfile);
 
 /**
  * @swagger
@@ -265,18 +268,20 @@ router.get('/profile', authMiddleware, (req, res) => {
  *                 type: string
  *               bio:
  *                 type: string
+ *               profilePicture:
+ *                 type: string
+ *               coverPicture:
+ *                 type: string
+ *               location:
+ *                 type: string
+ *               website:
+ *                 type: string
  *     responses:
  *       200:
  *         description: Profile updated successfully
  *       401:
  *         description: Unauthorized
  */
-router.put('/profile', authMiddleware, (req, res) => {
-  res.json({
-    message: 'Profile update functionality would be implemented here',
-    user: req.user,
-    updateData: req.body
-  });
-});
+router.put('/profile', authMiddleware, controllers.updateUserProfile);
 
 export default router;
