@@ -121,20 +121,8 @@ services:
     image: breezy-auth-service:latest
     container_name: breezy-auth-service-prod
     restart: unless-stopped
-    environment:
-      - NODE_ENV=production
-      - PORT=3001
-      - MONGODB_URI=mongodb://mongodb-auth:27017/breezy_auth
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
-      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
-      - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN}
-      - EMAIL_HOST=${SMTP_HOST}
-      - EMAIL_PORT=${SMTP_PORT}
-      - EMAIL_USER=${SMTP_USER}
-      - EMAIL_PASS=${SMTP_PASS}
-      - SMTP_SECURE=${SMTP_SECURE}
-      - FRONTEND_URL=${FRONTEND_URL}
+    env_file:
+      - ./microservices/auth-service/.env
     depends_on:
       mongodb-auth:
         condition: service_healthy
@@ -169,18 +157,8 @@ services:
     image: breezy-user-service:latest
     container_name: breezy-user-service-prod
     restart: unless-stopped
-    environment:
-      - NODE_ENV=production
-      - PORT=3002
-      - MONGODB_URI=mongodb://mongodb-user:27017/breezy_users
-      - AUTH_SERVICE_URL=http://auth-service:3001
-      - JWT_SECRET=${JWT_SECRET}
-      - EMAIL_HOST=${SMTP_HOST}
-      - EMAIL_PORT=${SMTP_PORT}
-      - EMAIL_USER=${SMTP_USER}
-      - EMAIL_PASS=${SMTP_PASS}
-      - SMTP_SECURE=${SMTP_SECURE}
-      - FRONTEND_URL=${FRONTEND_URL}
+    env_file:
+      - ./microservices/user-service/.env
     depends_on:
       mongodb-user:
         condition: service_healthy
@@ -219,13 +197,8 @@ services:
     image: breezy-post-service:latest
     container_name: breezy-post-service-prod
     restart: unless-stopped
-    environment:
-      - NODE_ENV=production
-      - PORT=3003
-      - MONGODB_URI=mongodb://mongodb-post:27017/breezy_posts
-      - AUTH_SERVICE_URL=http://auth-service:3001
-      - USER_SERVICE_URL=http://user-service:3002
-      - JWT_SECRET=${JWT_SECRET}
+    env_file:
+      - ./microservices/post-service/.env
     depends_on:
       mongodb-post:
         condition: service_healthy
@@ -266,14 +239,8 @@ services:
     image: breezy-notification-service:latest
     container_name: breezy-notification-service-prod
     restart: unless-stopped
-    environment:
-      - NODE_ENV=production
-      - PORT=3004
-      - MONGODB_URI=mongodb://mongodb-notification:27017/breezy_notifications
-      - AUTH_SERVICE_URL=http://auth-service:3001
-      - USER_SERVICE_URL=http://user-service:3002
-      - POST_SERVICE_URL=http://post-service:3003
-      - JWT_SECRET=${JWT_SECRET}
+    env_file:
+      - ./microservices/notification-service/.env
     depends_on:
       mongodb-notification:
         condition: service_healthy
