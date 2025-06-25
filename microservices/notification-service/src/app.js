@@ -12,6 +12,13 @@ import swaggerUi from 'swagger-ui-express';
 // Import du middleware d'authentification local
 import { authMiddleware, socketAuthMiddleware } from './middleware/auth.middleware.js';
 
+// Import routes
+import notificationRoutes from './routes/notifications.js';
+import messageRoutes from './routes/messages.js';
+
+// Import services
+import { cleanupOldNotifications, cleanupOldMessages } from './services/notification.service.js';
+
 // Configuration de l'environnement
 dotenv.config();
 
@@ -68,6 +75,27 @@ io.on('connection', (socket) => {
   socket.join(`user-${socket.userId}`);
   console.log(`👤 User ${socket.user.username} joined notifications room`);
 
+  // Send unread notification count on connection
+  socket.emit('notificationCount', { 
+    unread: 0 // This will be updated by client calling the API
+  });
+
+  // Handle client ping to keep connection alive
+  socket.on('ping', () => {
+    socket.emit('pong');
+  });
+
+  // Handle joining specific conversation rooms for private messages
+  socket.on('joinConversation', (conversationId) => {
+    socket.join(`conversation-${conversationId}`);
+    console.log(`👥 User ${socket.user.username} joined conversation ${conversationId}`);
+  });
+
+  socket.on('leaveConversation', (conversationId) => {
+    socket.leave(`conversation-${conversationId}`);
+    console.log(`👥 User ${socket.user.username} left conversation ${conversationId}`);
+  });
+
   socket.on('disconnect', () => {
     console.log(`🔌 User ${socket.user.username} disconnected from notifications`);
   });
@@ -88,11 +116,17 @@ app.get('/health', (req, res) => {
 });
 
 // Routes API pour notifications
+app.use('/', notificationRoutes);
+app.use('/', messageRoutes);
+
+// Legacy endpoint for backward compatibility
 app.get('/notifications', (req, res) => {
   res.json({
     message: 'Notification Service API',
     endpoints: {
       health: '/health',
+      notifications: '/',
+      messages: '/messages',
       websocket: 'ws://localhost:' + PORT
     }
   });
@@ -166,7 +200,7 @@ const swaggerOptions = {
       }
     }
   },
-  apis: ['./src/app.js']
+  apis: ['./src/routes/*.js', './src/app.js']
 };
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
@@ -202,9 +236,41 @@ app.use('*', (req, res) => {
 // Connexion à la base de données et démarrage du serveur
 connectDB().then(() => {
   server.listen(PORT, '0.0.0.0', () => {
-    console.log(`Notification Service running on port ${PORT}`);
-    console.log(`Health check: http://localhost:${PORT}/health`);
-    console.log(`WebSocket server active for real-time notifications`);
+    console.log(`🚀 Notification Service running on port ${PORT}`);
+    console.log(`🏥 Health check: http://localhost:${PORT}/health`);
+    console.log(`🔌 WebSocket server active for real-time notifications`);
+    console.log(`📚 API Documentation: http://localhost:${PORT}/docs`);
+    
+    // Schedule cleanup tasks (run daily at 2 AM)
+    const scheduleCleanup = () => {
+      const now = new Date();
+      const tomorrow2AM = new Date(now);
+      tomorrow2AM.setDate(tomorrow2AM.getDate() + 1);
+      tomorrow2AM.setHours(2, 0, 0, 0);
+      
+      const msUntil2AM = tomorrow2AM.getTime() - now.getTime();
+      
+      setTimeout(async () => {
+        try {
+          await cleanupOldNotifications();
+          await cleanupOldMessages();
+        } catch (error) {
+          console.error('❌ Scheduled cleanup failed:', error);
+        }
+        
+        // Schedule next cleanup (24 hours later)
+        setInterval(async () => {
+          try {
+            await cleanupOldNotifications();
+            await cleanupOldMessages();
+          } catch (error) {
+            console.error('❌ Scheduled cleanup failed:', error);
+          }
+        }, 24 * 60 * 60 * 1000); // 24 hours
+      }, msUntil2AM);
+    };
+    
+    scheduleCleanup();
   });
 });
 
