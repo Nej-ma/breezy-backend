@@ -42,15 +42,7 @@ services:
       - "./logs/traefik:/var/log/traefik"
     networks:
       - breezy-microservices-network
-    labels:
-      # Dashboard sécurisé sur admin.breezy.website
-      - "traefik.enable=true"
-      - "traefik.http.routers.dashboard.rule=Host(`${TRAEFIK_DOMAIN}`)"
-      - "traefik.http.routers.dashboard.entrypoints=websecure"
-      - "traefik.http.routers.dashboard.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.dashboard.middlewares=dashboard-auth"
-      - "traefik.http.routers.dashboard.service=api@internal"
-      - "traefik.http.middlewares.dashboard-auth.basicauth.users=${TRAEFIK_DASHBOARD_CREDENTIALS}"
+
 
   # =============
   # DATABASES (PRODUCTION)
