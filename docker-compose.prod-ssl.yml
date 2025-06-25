@@ -317,9 +317,10 @@ services:
       - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=https://api.breezy.website
       - NEXT_PUBLIC_API_BASE_URL=https://api.breezy.website/api
-      - INTERNAL_API_URL=http://traefik:80/api
       - NEXT_PUBLIC_FRONTEND_URL=https://breezy.website
       - PORT=3000
+    depends_on:
+      - traefik
     networks:
       - breezy-microservices-network
     healthcheck:
