@@ -13,6 +13,8 @@ http:
         accessControlAllowOriginList:
           - "https://breezy.website"
           - "https://www.breezy.website"
+          - "https://docs.breezy.website"
+          - "https://api.breezy.website"
         accessControlAllowCredentials: true
         accessControlAllowHeaders:
           - "Authorization"
