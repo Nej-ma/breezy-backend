@@ -16,6 +16,16 @@ const followSchema = new mongoose.Schema({
 // Ensure a user can't follow the same person twice
 followSchema.index({ follower: 1, following: 1 }, { unique: true });
 
+// Optimize queries for getting followers (ordered by creation date)
+followSchema.index({ following: 1, createdAt: -1 });
+
+// Optimize queries for getting following (ordered by creation date)  
+followSchema.index({ follower: 1, createdAt: -1 });
+
+// Single field indexes for counting
+followSchema.index({ follower: 1 });
+followSchema.index({ following: 1 });
+
 // Prevent self-following 
 followSchema.pre('save', function(next) {
   if (this.follower === this.following) {
