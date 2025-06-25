@@ -1,0 +1,46 @@
+http:
+  middlewares:
+    # Headers de sécurité pour production (version simple)
+    security-headers-prod:
+      headers:
+        # CORS pour production
+        accessControlAllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - PATCH
+          - OPTIONS        
+        accessControlAllowOriginList:
+          - "http://localhost:3000"
+          - "http://localhost:8080"
+        accessControlAllowCredentials: true
+        accessControlAllowHeaders:
+          - "Authorization"
+          - "Content-Type"
+          - "X-Requested-With"
+          - "Accept"
+          - "Origin"
+        # Headers de sécurité basiques
+        customResponseHeaders:
+          X-Frame-Options: "DENY"
+          X-Content-Type-Options: "nosniff"
+          X-XSS-Protection: "1; mode=block"
+        
+    # Compression optimisée
+    gzip-compression-prod:
+      compress: {}
+   
+    # Chaîne pour les API 
+    api-chain-prod:
+      chain:
+        middlewares:
+          - security-headers-prod
+          - gzip-compression-prod
+          
+    # Chaîne pour les pages web
+    web-chain-prod:
+      chain:
+        middlewares:
+          - security-headers-prod
+          - gzip-compression-prod
