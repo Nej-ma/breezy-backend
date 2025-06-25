@@ -2,12 +2,12 @@ import nodeMailer from 'nodemailer';
 
 // Create a transporter object using SMTP transport
 const transporter = nodeMailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.example.com',
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
   port: process.env.SMTP_PORT || 587,
   secure: process.env.SMTP_SECURE === 'true', // Convert string to boolean
   auth: {
-    user: process.env.SMTP_USER || '',
-    pass: process.env.SMTP_PASS || ''
+    user: process.env.SMTP_USER || 'noreplybreezy@gmail.com',
+    pass: process.env.SMTP_PASS || 'qqvm shvv reed',
   }
 });
 
