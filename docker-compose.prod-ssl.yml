@@ -315,7 +315,8 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=https://api.breezy.website
+      - NEXT_PUBLIC_API_URL=https://api.breezy.website     # ← Pour le browser
+      - INTERNAL_API_URL=http://breezy-traefik-prod       # ← Pour le serveur interne
       - NEXT_PUBLIC_FRONTEND_URL=https://breezy.website
       - PORT=3000
     networks:
