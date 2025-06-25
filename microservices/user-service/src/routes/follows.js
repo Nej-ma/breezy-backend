@@ -1,6 +1,7 @@
 import express from 'express';
 import controller from '../controllers/follow.controllers.js';
 import authMiddleware from '../middleware/auth.middleware.js';
+import User from '../models/User.js';
 
 const router = express.Router();
 
@@ -11,6 +12,9 @@ router.get('/:userId/is-following', authMiddleware, controller.isFollowingUser);
 router.get('/:userId/followers', authMiddleware, controller.getFollowers);
 router.get('/:userId/following', authMiddleware, controller.getFollowing);
 router.delete('/:userId/unfollow', authMiddleware, controller.unfollowUser);
+
+// Route pour synchroniser tous les compteurs (développement)
+router.post('/sync-counts', authMiddleware, controller.syncAllCounts);
 
 /**
  * @swagger
@@ -132,5 +136,24 @@ router.delete('/:userId/unfollow', authMiddleware, controller.unfollowUser);
  *       404:
  *         description: User not found
  */
+
+// Route de synchronisation pour recalculer les compteurs (utile en développement)
+router.post('/sync-counts', authMiddleware, async (req, res) => {
+    try {
+        // Recalculer les compteurs pour tous les utilisateurs
+        const users = await User.find({});
+        const syncPromises = users.map(user => controller.syncUserCounts(user.userId));
+        
+        await Promise.all(syncPromises);
+        
+        res.status(200).json({ 
+            message: 'All user counts synchronized successfully',
+            usersUpdated: users.length
+        });
+    } catch (error) {
+        console.error('Error syncing all counts:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
 
 export default router;
