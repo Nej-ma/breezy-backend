@@ -71,7 +71,7 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: `${process.env.API_GATEWAY_URL || 'http://localhost:8080/api'}/posts`,
+        url: `${process.env.API_GATEWAY_URL || 'http://api.breezy.website/api'}/posts`,
         description: 'Post Service via API Gateway (Recommended)'
       },
       {

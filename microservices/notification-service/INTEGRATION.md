@@ -75,7 +75,7 @@ await axios.post('http://notification-service:3004/webhook/mention', {
 import io from 'socket.io-client';
 
 // Connect to notification service
-const socket = io('ws://localhost:8080/api/notifications', {
+const socket = io('ws://api.breezy.website/api/notifications', {
   auth: {
     token: userJwtToken
   }
@@ -276,7 +276,7 @@ FRONTEND_URL=http://localhost:3000
 
 ### Health Check
 ```bash
-curl http://localhost:8080/api/notifications/health
+curl http://api.breezy.website/api/notifications/health
 ```
 
 ### Cleanup Jobs
@@ -284,8 +284,8 @@ curl http://localhost:8080/api/notifications/health
 - Old messages (>90 days, deleted by both users) are cleaned up daily
 
 ### API Documentation
-- Swagger UI: `http://localhost:8080/api/notifications/docs`
-- OpenAPI JSON: `http://localhost:8080/api/notifications/docs/swagger.json`
+- Swagger UI: `http://api.breezy.website/api/notifications/docs`
+- OpenAPI JSON: `http://api.breezy.website/api/notifications/docs/swagger.json`
 
 ## Error Handling
 
@@ -330,4 +330,4 @@ npm run dev
 docker-compose up notification-service
 ```
 
-The service will be available at `http://localhost:8080/api/notifications` via the API gateway.
+The service will be available at `http://api.breezy.website/api/notifications` via the API gateway.

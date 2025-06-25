@@ -35,7 +35,7 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: `${process.env.API_GATEWAY_URL || 'http://localhost:8080/api'}/users`,  // ✅ Via API Gateway
+        url: `${process.env.API_GATEWAY_URL || 'http://api.breezy.website/api'}/users`,  // ✅ Via API Gateway
         description: 'User Service via API Gateway (Recommended)'
       },
       {

@@ -50,14 +50,14 @@ node -e "console.log('JWT_REFRESH_SECRET=' + require('crypto').randomBytes(64).t
 ## 🌐 Accès aux services
 
 ### **Développement**
-- API Gateway: http://localhost:8080
+- API Gateway: http://api.breezy.website
 - Traefik Dashboard: http://localhost:8081
-- Documentation: http://localhost:8080/docs
+- Documentation: http://api.breezy.website/docs
 
 ### **Production (sans SSL)**
-- API Gateway: http://localhost:8080
+- API Gateway: http://api.breezy.website
 - Traefik Dashboard: http://localhost:8081 
-- Documentation: http://localhost:8080/docs
+- Documentation: http://api.breezy.website/docs
 
 ### **Production (avec SSL)**
 - API: https://api.breezy.website

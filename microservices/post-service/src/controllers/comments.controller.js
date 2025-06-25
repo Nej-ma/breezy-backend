@@ -14,7 +14,7 @@ const publishComment = async (req, res) => {
         }
 
         const userId = req.user.userId;
-        const userServiceUrl = process.env.USER_SERVICE_URL || 'http://localhost:8080/api/users';
+        const userServiceUrl = process.env.USER_SERVICE_URL || 'http://api.breezy.website/api/users';
         const { data: userData } = await axios.get(`${userServiceUrl}/id/${userId}`);
 
         // Create a new comment

@@ -13,7 +13,7 @@ http:
           - OPTIONS        
         accessControlAllowOriginList:
           - "http://localhost:3000"
-          - "http://localhost:8080"
+          - "http://api.breezy.website"
           - "https://breezy.website"
           - "https://www.breezy.website"
         accessControlAllowCredentials: true
