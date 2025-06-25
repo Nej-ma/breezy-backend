@@ -122,7 +122,7 @@ services:
     container_name: breezy-auth-service-prod
     restart: unless-stopped
     env_file:
-      - ./microservices/auth-service/.env
+      - ./.env.prod
     depends_on:
       mongodb-auth:
         condition: service_healthy
@@ -158,7 +158,7 @@ services:
     container_name: breezy-user-service-prod
     restart: unless-stopped
     env_file:
-      - ./microservices/user-service/.env
+      - ./.env.prod
     depends_on:
       mongodb-user:
         condition: service_healthy
@@ -198,7 +198,7 @@ services:
     container_name: breezy-post-service-prod
     restart: unless-stopped
     env_file:
-      - ./microservices/post-service/.env
+      - ./.env.prod
     depends_on:
       mongodb-post:
         condition: service_healthy
@@ -240,7 +240,7 @@ services:
     container_name: breezy-notification-service-prod
     restart: unless-stopped
     env_file:
-      - ./microservices/notification-service/.env
+      - ./.env.prod
     depends_on:
       mongodb-notification:
         condition: service_healthy
