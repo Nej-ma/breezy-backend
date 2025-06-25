@@ -1,10 +1,7 @@
-# Version avec SSL pour breezy.website
-# Usage: docker-compose -f docker-compose.prod-ssl.yml up -d
-
-version: '3.8'
-
 services:
-  # TRAEFIK avec SSL automatique
+  # =============
+  # TRAEFIK - API GATEWAY avec SSL
+  # =============
   traefik:
     image: traefik:v3.4
     container_name: breezy-traefik-prod
@@ -43,9 +40,8 @@ services:
     networks:
       - breezy-microservices-network
 
-
   # =============
-  # DATABASES (PRODUCTION)
+  # DATABASES
   # =============
   mongodb-auth:
     image: mongo:7.0
@@ -116,7 +112,7 @@ services:
       retries: 3
 
   # =============
-  # MICROSERVICES (PRODUCTION)
+  # MICROSERVICES
   # =============
   auth-service:
     build:
@@ -133,10 +129,10 @@ services:
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
       - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN}
-      - EMAIL_HOST=${EMAIL_HOST}
-      - EMAIL_PORT=${EMAIL_PORT}
-      - EMAIL_USER=${EMAIL_USER}
-      - EMAIL_PASS=${EMAIL_PASS}
+      - EMAIL_HOST=${SMTP_HOST}
+      - EMAIL_PORT=${SMTP_PORT}
+      - EMAIL_USER=${SMTP_USER}
+      - EMAIL_PASS=${SMTP_PASS}
       - SMTP_SECURE=${SMTP_SECURE}
       - FRONTEND_URL=${FRONTEND_URL}
     depends_on:
@@ -179,10 +175,10 @@ services:
       - MONGODB_URI=mongodb://mongodb-user:27017/breezy_users
       - AUTH_SERVICE_URL=http://auth-service:3001
       - JWT_SECRET=${JWT_SECRET}
-      - EMAIL_HOST=${EMAIL_HOST}
-      - EMAIL_PORT=${EMAIL_PORT}
-      - EMAIL_USER=${EMAIL_USER}
-      - EMAIL_PASS=${EMAIL_PASS}
+      - EMAIL_HOST=${SMTP_HOST}
+      - EMAIL_PORT=${SMTP_PORT}
+      - EMAIL_USER=${SMTP_USER}
+      - EMAIL_PASS=${SMTP_PASS}
       - SMTP_SECURE=${SMTP_SECURE}
       - FRONTEND_URL=${FRONTEND_URL}
     depends_on:
@@ -308,7 +304,7 @@ services:
       - "traefik.http.routers.notification-api.middlewares=notification-stripprefix,api-chain-ssl@file"
 
   # =============
-  # SWAGGER AGGREGATOR (PRODUCTION)
+  # SWAGGER AGGREGATOR
   # =============
   swagger-aggregator:
     build:
@@ -345,5 +341,39 @@ services:
           memory: 128M
     labels:
       - "traefik.enable=true"
-      # Route pour /docs
-      - "traefik.http.routers.docs.rule=Host(`${MAIN_DOMAIN}`) && PathPrefix(`/docs`)"
+      # Route pour docs.breezy.website
+      - "traefik.http.routers.docs.rule=Host(`docs.breezy.website`)"
+      - "traefik.http.routers.docs.entrypoints=websecure"
+      - "traefik.http.routers.docs.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.docs.service=swagger-aggregator"
+      - "traefik.http.services.swagger-aggregator.loadbalancer.server.port=3005"
+      - "traefik.http.routers.docs.middlewares=web-chain-ssl@file"
+
+  # =============
+  # MONITORING
+  # =============
+  watchtower:
+    image: containrrr/watchtower
+    container_name: breezy-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=3600
+    networks:
+      - breezy-microservices-network
+
+volumes:
+  mongodb_auth_data:
+    driver: local
+  mongodb_user_data:
+    driver: local
+  mongodb_post_data:
+    driver: local
+  mongodb_notification_data:
+    driver: local
+
+networks:
+  breezy-microservices-network:
+    driver: bridge
