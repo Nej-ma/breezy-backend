@@ -305,6 +305,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3005
+      - API_GATEWAY_URL=https://api.breezy.website
       - AUTH_SERVICE_URL=http://auth-service:3001
       - USER_SERVICE_URL=http://user-service:3002
       - POST_SERVICE_URL=http://post-service:3003
