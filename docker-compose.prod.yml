@@ -120,10 +120,14 @@ services:
       - MONGODB_URI=mongodb://mongodb-auth:27017/breezy_auth
       - JWT_SECRET=${JWT_SECRET}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN}
       - EMAIL_HOST=${EMAIL_HOST}
       - EMAIL_PORT=${EMAIL_PORT}
       - EMAIL_USER=${EMAIL_USER}
       - EMAIL_PASS=${EMAIL_PASS}
+      - SMTP_SECURE=${SMTP_SECURE}
+      - FRONTEND_URL=${FRONTEND_URL}
     depends_on:
       mongodb-auth:
         condition: service_healthy
@@ -167,6 +171,8 @@ services:
       - EMAIL_PORT=${EMAIL_PORT}
       - EMAIL_USER=${EMAIL_USER}
       - EMAIL_PASS=${EMAIL_PASS}
+      - SMTP_SECURE=${SMTP_SECURE}
+      - FRONTEND_URL=${FRONTEND_URL}
     depends_on:
       mongodb-user:
         condition: service_healthy
