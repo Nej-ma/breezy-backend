@@ -308,7 +308,7 @@ services:
   # =============
   frontend:
     build:
-      context: ../breezy
+      context: ../Breezy
       dockerfile: Dockerfile
     image: breezy-frontend:latest
     container_name: breezy-frontend-prod
