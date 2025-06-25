@@ -304,6 +304,45 @@ services:
       - "traefik.http.routers.notification-api.middlewares=notification-stripprefix,api-chain-ssl@file"
 
   # =============
+  # FRONTEND - NEXT.JS
+  # =============
+  frontend:
+    build:
+      context: ../breezy
+      dockerfile: Dockerfile
+    image: breezy-frontend:latest
+    container_name: breezy-frontend-prod
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=https://api.breezy.website
+      - NEXT_PUBLIC_FRONTEND_URL=https://breezy.website
+      - PORT=3000
+    networks:
+      - breezy-microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    labels:
+      - "traefik.enable=true"
+      # Route principale breezy.website
+      - "traefik.http.routers.frontend.rule=Host(`breezy.website`) || Host(`www.breezy.website`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.frontend.service=frontend"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+      - "traefik.http.routers.frontend.middlewares=web-chain-ssl@file"
+
+  # =============
   # SWAGGER AGGREGATOR
   # =============
   swagger-aggregator:
