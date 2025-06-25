@@ -1,6 +1,7 @@
 import { get } from "mongoose";
 import Comment from "../models/Comment.js";
 import axios from 'axios';
+import Post from "../models/Post.js";
 
 
 const publishComment = async (req, res) => {
@@ -30,6 +31,19 @@ const publishComment = async (req, res) => {
 
         // Save the comment to the database
         await newComment.save();
+
+        if (parentComment) {
+            await Comment.findByIdAndUpdate(
+                parentComment,
+                { $inc: { repliesCount: 1 } }
+            );
+        }
+
+        await Post.findByIdAndUpdate(
+            post,
+            { $inc: { commentsCount: 1 } }
+        );
+
 
         res.status(201).json({ message: 'Comment published successfully', comment: newComment });
     } catch (error) {
@@ -111,6 +125,19 @@ const deleteComment = async (req, res) => {
         if (!deletedComment) {
             return res.status(404).json({ message: 'Comment not found.' });
         }
+
+        if (comment.parentComment) {
+            await Comment.findByIdAndUpdate(
+                comment.parentComment, 
+                { $inc: { repliesCount: -1 } }
+            );
+        }
+
+        await Post.findByIdAndUpdate(
+            comment.post, 
+            { $inc: { commentsCount: -1 } }
+        );
+
 
         res.status(200).json({ message: 'Comment deleted successfully', comment: deletedComment });
     } catch (error) {
