@@ -235,21 +235,19 @@ const deleteUserProfile = async (req, res) => {
     try {
         const { id } = req.params;
 
-        console.log('Deleting user profile for userId:', id);
-
         if (!id) {
             return res.status(401).json({ error: 'Unauthorized: user not authenticated' });
         }
 
         const deletedProfile = await UserProfile.findById(id);
 
-        console.log('Deleted profile:', deletedProfile);
+        if (!deletedProfile) {
+            return res.status(404).json({ error: 'User profile not found' });
+        }
 
         // Only allow if user is deleting their own profile or has moderator/admin role
         const isSelf = deletedProfile.userId === req.user.id;
         const isModeratorOrAdmin = req.user.role === 'moderator' || req.user.role === 'admin';
-
-        console.log("req.user:", req.user);
 
         if (!isSelf && !isModeratorOrAdmin) {
             return res.status(403).json({ error: 'Forbidden: insufficient permissions' });
