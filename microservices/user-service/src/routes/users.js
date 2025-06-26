@@ -41,7 +41,7 @@ const router = express.Router();
  *       404:
  *         description: No user profiles found
  */
-router.get('/', controllers.getUsers);
+router.get('/', authMiddleware, controllers.getUsers);
 
 /**
  * @swagger
@@ -127,7 +127,7 @@ router.get('/', controllers.getUsers);
  *       500:
  *         description: Server error
  */
-router.get('/search', controllers.searchUsers);
+router.get('/search', authMiddleware, controllers.searchUsers);
 
 /**
  * @swagger
@@ -175,7 +175,7 @@ router.get('/search', controllers.searchUsers);
  *       404:
  *         description: User profile not found
  */
-router.get('/username/:username', controllers.getUserByUsername);
+router.get('/username/:username', authMiddleware, controllers.getUserByUsername);
 
 /**
  * @swagger
@@ -223,7 +223,7 @@ router.get('/username/:username', controllers.getUserByUsername);
  *       404:
  *         description: User profile not found
  */
-router.get('/id/:userId', controllers.getUserById);
+router.get('/id/:userId', authMiddleware, controllers.getUserById);
 
 // Internal service routes (appelées par d'autres microservices)
 router.post('/create-profile', controllers.createUserProfile);
