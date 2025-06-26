@@ -65,6 +65,8 @@ const login = async (req, res) => {
       displayName: user.displayName,
       isVerified: user.isVerified,
       role: user.role,
+      isSuspended: user.isSuspended,
+      suspendedUntil: user.suspendedUntil,
       createdAt: user.createdAt
     };
 
