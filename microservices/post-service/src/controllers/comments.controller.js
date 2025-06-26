@@ -26,7 +26,6 @@ const publishComment = async (req, res) => {
 
         const userServiceUrl = process.env.USER_SERVICE_URL || 'http://localhost:8080/api/users';
 
-        console.log('Fetching user data for userId:', userId);
         const response = await axios.get(`${userServiceUrl}/id/${userId}`, {
             headers: {
                 'Authorization': `${req.headers.authorization}`
@@ -34,8 +33,6 @@ const publishComment = async (req, res) => {
         });
 
         const userData = response.data;
-
-        console.log('userData:', userData);
 
         // Create a new comment
         const newComment = new Comment({

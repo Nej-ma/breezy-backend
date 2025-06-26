@@ -63,7 +63,7 @@ router.delete('/users/:userId', authMiddleware, controllers.deleteAllUserPosts);
  *                   type: string
  *               visibility:
  *                 type: string
- *                 enum: [public, private, friends]
+ *                 enum: [public, private, followers]
  *     responses:
  *       201:
  *         description: Post created successfully

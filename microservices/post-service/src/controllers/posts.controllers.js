@@ -92,7 +92,12 @@ const getPosts = async (req, res) => {
                 timeout: 5000
             });
 
-            const followingUserIds = followingResponse.data.map(item => item.following);
+            if (followingResponse.status !== 200) {
+                return res.status(500).json({ message: 'Error fetching following users.' });
+            }
+
+            const followingUserIds = followingResponse.data.users.map(user => user.userId);
+
             const posts = await Post.find({ 
                 author: { $in: followingUserIds }, 
                 isDeleted: false 
@@ -128,7 +133,7 @@ const getPosts = async (req, res) => {
 
     } catch (error) {
         console.error('Error fetching posts:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        res.status(500).json({ message: `Internal server error ${error.message}` });
     }
 }
 
