@@ -213,20 +213,44 @@ const updatePost = async (req, res) => {
 const deletePost = async (req, res) => {
     try {
         const postId = req.params.id;
+        const { moderatorAction, reason } = req.body || {};
 
         const post = await Post.findById(postId);
         if (!post) {
             return res.status(404).json({ message: 'Post not found.' });
         }
-        if (post.author.toString() !== req.user.userId) {
+
+        // Vérifier les permissions de suppression
+        const isAuthor = post.author.toString() === req.user.userId;
+        const isModerator = req.user.role === 'moderator' || req.user.role === 'admin';
+        
+        if (!isAuthor && !isModerator) {
             return res.status(403).json({ message: 'You are not authorized to delete this post.' });
-        } 
+        }
+
+        // Si c'est une action de modération, logguer l'action
+        if (moderatorAction && isModerator && !isAuthor) {
+            console.log(`🔨 Post ${postId} supprimé par modération par ${req.user.userId} (${req.user.role}). Raison: ${reason || 'Non spécifiée'}`);
+        }
     
-        const deletedPost = await Post.findByIdAndUpdate(postId, { isDeleted: true }, { new: true });
+        const deletedPost = await Post.findByIdAndUpdate(postId, { 
+            isDeleted: true,
+            // Optionnel: ajouter des métadonnées de modération
+            ...(moderatorAction && { 
+                deletedBy: req.user.userId,
+                deletionReason: reason,
+                isModerationAction: true 
+            })
+        }, { new: true });
+        
         if (!deletedPost) {
             return res.status(404).json({ message: 'Post not found.' });
         }
-        res.status(200).json({ message: 'Post deleted successfully', post: deletedPost });
+        
+        res.status(200).json({ 
+            message: moderatorAction ? 'Post deleted by moderation' : 'Post deleted successfully', 
+            post: deletedPost 
+        });
     } catch (error) {
         console.error('Error deleting post:', error);
         res.status(500).json({ message: 'Internal server error' });

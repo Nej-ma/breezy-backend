@@ -18,6 +18,11 @@ const commentSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  authorRole: {
+    type: String,
+    enum: ['user', 'moderator', 'admin'],
+    default: 'user'
+  },
   post: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Post',
@@ -50,6 +55,19 @@ const commentSchema = new mongoose.Schema({
     default: false
   },
   isDeleted: {
+    type: Boolean,
+    default: false
+  },
+  // Champs de modération
+  deletedBy: {
+    type: String, // userId de celui qui a supprimé
+    default: null
+  },
+  deletionReason: {
+    type: String,
+    default: null
+  },
+  isModerationAction: {
     type: Boolean,
     default: false
   }

@@ -40,6 +40,7 @@ const publishComment = async (req, res) => {
             authorUsername: userData.username,
             authorDisplayName: userData.displayName,
             authorProfilePicture: userData.profilePicture || '',
+            authorRole: userData.role || 'user',
             post,
             content,
             parentComment: parentComment || null,
@@ -76,7 +77,28 @@ const getComment = async (req, res) => {
         const comments = await Comment.find({ post: postId, isDeleted: false })
             .sort({ createdAt: -1 });
 
-        res.status(200).json(comments);
+        // Enrichir les commentaires avec les données utilisateur actualisées
+        const userServiceUrl = process.env.USER_SERVICE_URL || 'http://localhost:8080/api/users';
+        const enrichedComments = await Promise.all(
+            comments.map(async (comment) => {
+                try {
+                    const { data: userData } = await axios.get(`${userServiceUrl}/id/${comment.author}`);
+                    return {
+                        ...comment.toObject(),
+                        authorRole: userData.role || 'user',
+                        authorDisplayName: userData.displayName || comment.authorDisplayName,
+                        authorUsername: userData.username || comment.authorUsername,
+                        authorProfilePicture: userData.profilePicture || comment.authorProfilePicture
+                    };
+                } catch (error) {
+                    console.error(`Erreur lors de la récupération des données utilisateur pour ${comment.author}:`, error);
+                    // Retourner le commentaire original en cas d'erreur
+                    return comment.toObject();
+                }
+            })
+        );
+
+        res.status(200).json(enrichedComments);
     } catch (error) {
         console.error('Error fetching comments:', error);
         res.status(500).json({ message: 'Internal server error' });
@@ -122,19 +144,39 @@ const updateComment = async (req, res) => {
 const deleteComment = async (req, res) => {
     try {
         const commentId = req.params.id;
+        const { reason } = req.body;
 
         const comment = await Comment.findById(commentId);
         if (!comment) {
             return res.status(404).json({ message: 'Comment not found.' });
         }
-        if (comment.author.toString() !== req.user.userId) {
+
+        // Check if user is authorized to delete
+        const userRole = req.user.role;
+        const isAuthor = comment.author.toString() === req.user.userId;
+        const isModerator = userRole === 'moderator' || userRole === 'admin';
+        
+        if (!isAuthor && !isModerator) {
             return res.status(403).json({ message: 'You are not authorized to delete this comment.' });
+        }
+
+        // Prepare update fields
+        const updateFields = {
+            isDeleted: true,
+            deletedAt: new Date()
+        };
+
+        // If it's a moderation action (not the author deleting their own comment)
+        if (!isAuthor && isModerator) {
+            updateFields.deletedBy = req.user.userId;
+            updateFields.deletionReason = reason || 'Moderation action';
+            updateFields.isModerationAction = true;
         }
 
         // Find and delete the comment
         const deletedComment = await Comment.findByIdAndUpdate(
             commentId,
-            { isDeleted: true },
+            updateFields,
             { new: true }
         );
 
@@ -154,8 +196,11 @@ const deleteComment = async (req, res) => {
             { $inc: { commentsCount: -1 } }
         );
 
-
-        res.status(200).json({ message: 'Comment deleted successfully', comment: deletedComment });
+        const actionType = updateFields.isModerationAction ? 'moderated' : 'deleted';
+        res.status(200).json({ 
+            message: `Comment ${actionType} successfully`, 
+            comment: deletedComment 
+        });
     } catch (error) {
         console.error('Error deleting comment:', error);
         res.status(500).json({ message: 'Internal server error' });
