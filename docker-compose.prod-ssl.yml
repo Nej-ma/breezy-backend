@@ -360,21 +360,6 @@ services:
       - "traefik.http.services.swagger-aggregator.loadbalancer.server.port=3005"
       - "traefik.http.routers.docs.middlewares=web-chain-ssl@file"
 
-  # =============
-  # MONITORING
-  # =============
-  watchtower:
-    image: containrrr/watchtower
-    container_name: breezy-watchtower
-    restart: unless-stopped
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      - WATCHTOWER_CLEANUP=true
-      - WATCHTOWER_POLL_INTERVAL=3600
-    networks:
-      - breezy-microservices-network
-
 volumes:
   mongodb_auth_data:
     driver: local
