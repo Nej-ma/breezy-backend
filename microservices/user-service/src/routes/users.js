@@ -4,7 +4,19 @@ import authMiddleware from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
-// Public routes (no authentication required)
+/**
+ * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ * 
+ * tags:
+ *   name: Users
+ *   description: API for user profiles management
+ */
 
 /**
  * @swagger
@@ -12,6 +24,8 @@ const router = express.Router();
  *   get:
  *     summary: Retrieve a list of user profiles
  *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: A list of user profiles
@@ -49,6 +63,8 @@ router.get('/', authMiddleware, controllers.getUsers);
  *   get:
  *     summary: Search for users by username or display name
  *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: q
@@ -135,6 +151,8 @@ router.get('/search', authMiddleware, controllers.searchUsers);
  *   get:
  *     summary: Retrieve a user profile by username
  *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: username
@@ -183,6 +201,8 @@ router.get('/username/:username', authMiddleware, controllers.getUserByUsername)
  *   get:
  *     summary: Retrieve a user profile by user ID
  *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: userId
