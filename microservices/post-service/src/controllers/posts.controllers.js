@@ -76,8 +76,11 @@ const getPosts = async (req, res) => {
                 return res.status(403).json({ message: 'Access denied. You cannot view this post.' });
             }
 
+            // Enrich single post with user data
+            const enrichedPost = await enrichPostWithUserData(post, userServiceUrl, authToken);
+
             return res.status(200).json({
-                post,
+                post: enrichedPost,
                 filter: 'single',
                 id: id
             });
@@ -137,6 +140,33 @@ const getPosts = async (req, res) => {
     }
 }
 
+// Shared function to enrich a single post with user data
+const enrichPostWithUserData = async (post, userServiceUrl, authToken = null) => {
+    try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (authToken) {
+            headers['Authorization'] = authToken;
+        }
+        
+        const { data: userData } = await axios.get(`${userServiceUrl}/id/${post.author}`, {
+            headers,
+            timeout: 5000
+        });
+        return {
+            ...post.toObject(),
+            // Update author data with fresh data from user service
+            authorRole: userData.role || 'user',
+            authorDisplayName: userData.displayName || post.authorDisplayName,
+            authorUsername: userData.username || post.authorUsername,
+            authorProfilePicture: userData.profilePicture || post.authorProfilePicture
+        };
+    } catch (error) {
+        console.error(`Erreur lors de la récupération des données utilisateur pour le post ${post._id}:`, error);
+        // Return original post if user data fetch fails
+        return post.toObject();
+    }
+};
+
 const filterPostsByVisibility = async (posts, currentUserId, userServiceUrl, authToken) => {
     const filteredPosts = [];
     
@@ -168,7 +198,12 @@ const filterPostsByVisibility = async (posts, currentUserId, userServiceUrl, aut
         // Do not push private posts if not the author
     }
     
-    return filteredPosts;
+    // Enrich posts with updated user data (including roles)
+    const enrichedPosts = await Promise.all(
+        filteredPosts.map(post => enrichPostWithUserData(post, userServiceUrl, authToken))
+    );
+    
+    return enrichedPosts;
 };
 
 

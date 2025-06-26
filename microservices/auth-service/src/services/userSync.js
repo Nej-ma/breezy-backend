@@ -7,7 +7,7 @@ const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://localhost:3002'
  */
 export const syncUserAuthData = async (userId, authData) => {
   try {
-    const response = await axios.post(`${USER_SERVICE_URL}/api/users/sync-auth-data`, {
+    const response = await axios.post(`${USER_SERVICE_URL}/sync-auth-data`, {
       userId,
       ...authData
     });
