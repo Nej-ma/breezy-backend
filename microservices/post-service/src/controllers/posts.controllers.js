@@ -141,32 +141,31 @@ const filterPostsByVisibility = async (posts, currentUserId, userServiceUrl, aut
     const filteredPosts = [];
     
     for (const post of posts) {
+        // Always allow if current user is the author
+        if (post.author?.toString?.() === currentUserId) {
+            filteredPosts.push(post);
+            continue;
+        }
+
         if (post.visibility === 'public') {
             filteredPosts.push(post);
-        } else if (post.visibility === 'private') {
-            if (post.author === currentUserId) {
-                filteredPosts.push(post);
-            }
         } else if (post.visibility === 'followers') {
-            if (post.author === currentUserId) {
-                filteredPosts.push(post);
-            } else {
-                try {
-                    const followerResponse = await axios.get(`${userServiceUrl}/${post.author}/is-following`, {
-                        headers: { 
-                            'Authorization': authToken,
-                            'Content-Type': 'application/json'
-                        },
-                        timeout: 5000
-                    });
-                    if (followerResponse.data.isFollowing) {
-                        filteredPosts.push(post);
-                    }
-                } catch (error) {
-                    console.error('Error checking if author follows user:', error);
+            try {
+                const followerResponse = await axios.get(`${userServiceUrl}/${post.author}/is-following`, {
+                    headers: { 
+                        'Authorization': authToken,
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: 5000
+                });
+                if (followerResponse.data.isFollowing) {
+                    filteredPosts.push(post);
                 }
+            } catch (error) {
+                console.error('Error checking if author follows user:', error);
             }
         }
+        // Do not push private posts if not the author
     }
     
     return filteredPosts;
