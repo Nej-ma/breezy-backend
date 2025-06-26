@@ -4,7 +4,19 @@ import authMiddleware from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
-// Public routes (no authentication required)
+/**
+ * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ * 
+ * tags:
+ *   name: Users
+ *   description: API for user profiles management
+ */
 
 /**
  * @swagger
