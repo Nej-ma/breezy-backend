@@ -280,9 +280,30 @@ const deleteUserProfile = async (req, res) => {
             console.error('Error deleting user account in Auth Service:', error);
             return res.status(500).json({ error: 'Internal server error' });
 
-        }
+        } finally {
+            try {
+                const postServiceUrl = process.env.POST_SERVICE_URL || 'http://post-service:3003';
+                await fetch(`${postServiceUrl}/users/${deletedProfile.userId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
 
-        res.status(200).json({ message: 'User profile deleted successfully' });
+                await fetch(`${postServiceUrl}/comments/users/${deletedProfile.userId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+            } catch (error) {
+                console.error('Error deleting user posts in Post Service:', error);
+            }
+
+            res.status(200).json({ message: 'User profile deleted successfully' });
+        }
     } catch (error) {
         console.error('Error deleting user profile:', error);
         res.status(500).json({ error: 'Internal server error' });

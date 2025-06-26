@@ -6,16 +6,36 @@ import Post from "../models/Post.js";
 
 const publishComment = async (req, res) => {
     try {
-        const {content, parentComment, mentions } = req.body;
-        const post = req.params.postId
+        const { content, parentComment, mentions } = req.body;
+        const post = req.params.postId;
         // Validate required fields
         if (!post || !content) {
-            return res.status(400).json({ message: 'Author, post, and content are required.' });
+            return res.status(400).json({ message: 'Post and content are required.' });
         }
 
-        const userId = req.user.userId;
+        const userId = req.user.userId || req.user.id;
+        if (!userId) {
+            return res.status(400).json({ message: 'Author is required.' });
+        }
+
+        // Check if post exists
+        const postExists = await Post.findById(post);
+        if (!postExists) {
+            return res.status(404).json({ message: 'Post not found.' });
+        }
+
         const userServiceUrl = process.env.USER_SERVICE_URL || 'http://localhost:8080/api/users';
-        const { data: userData } = await axios.get(`${userServiceUrl}/id/${userId}`);
+
+        console.log('Fetching user data for userId:', userId);
+        const response = await axios.get(`${userServiceUrl}/id/${userId}`, {
+            headers: {
+                'Authorization': `${req.headers.authorization}`
+            }
+        });
+
+        const userData = response.data;
+
+        console.log('userData:', userData);
 
         // Create a new comment
         const newComment = new Comment({
@@ -43,7 +63,6 @@ const publishComment = async (req, res) => {
             post,
             { $inc: { commentsCount: 1 } }
         );
-
 
         res.status(201).json({ message: 'Comment published successfully', comment: newComment });
     } catch (error) {
@@ -193,10 +212,28 @@ const updateCommentLikes = async (req, res) => {
     }
 }
 
+const deleteAllUserComments = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        if (!userId) {
+            return res.status(400).json({ message: 'User ID is required.' });
+        }
+
+        // Delete all comments by the user
+        await Comment.deleteMany({ author: userId });
+
+        res.status(200).json({ message: 'All user comments deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting all user comments:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+}
+
 export default {
     publishComment,
     getComment,
     updateComment,
     deleteComment,
-    updateCommentLikes
+    updateCommentLikes,
+    deleteAllUserComments
 };
