@@ -12,6 +12,7 @@ router.post('/', authMiddleware, controllers.publishPost);
 router.put('/:id', authMiddleware, controllers.updatePost); 
 router.put('/:id/like', authMiddleware, controllers.updatePostLikes);
 router.delete('/:id', authMiddleware, controllers.deletePost);
+router.delete('/users/:userId', authMiddleware, controllers.deleteAllUserPosts);
 
 /**
  * @swagger
@@ -62,7 +63,7 @@ router.delete('/:id', authMiddleware, controllers.deletePost);
  *                   type: string
  *               visibility:
  *                 type: string
- *                 enum: [public, private, friends]
+ *                 enum: [public, private, followers]
  *     responses:
  *       201:
  *         description: Post created successfully
@@ -323,5 +324,28 @@ router.delete('/:id', authMiddleware, controllers.deletePost);
  *         description: Post not found
  */
 
+/**
+ * @swagger
+ * /users/{userId}:
+ *   delete:
+ *     summary: Delete all posts by a specific user
+ *     tags: [Posts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The user ID whose posts will be deleted
+ *     responses:
+ *       200:
+ *         description: All posts by the user deleted
+ *       401:
+ *         description: Unauthorized - Access token required
+ *       404:
+ *         description: No posts found for the user
+ */
 
 export default router;

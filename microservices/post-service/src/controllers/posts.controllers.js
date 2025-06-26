@@ -92,7 +92,12 @@ const getPosts = async (req, res) => {
                 timeout: 5000
             });
 
-            const followingUserIds = followingResponse.data.map(item => item.following);
+            if (followingResponse.status !== 200) {
+                return res.status(500).json({ message: 'Error fetching following users.' });
+            }
+
+            const followingUserIds = followingResponse.data.users.map(user => user.userId);
+
             const posts = await Post.find({ 
                 author: { $in: followingUserIds }, 
                 isDeleted: false 
@@ -128,7 +133,7 @@ const getPosts = async (req, res) => {
 
     } catch (error) {
         console.error('Error fetching posts:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        res.status(500).json({ message: `Internal server error ${error.message}` });
     }
 }
 
@@ -136,32 +141,31 @@ const filterPostsByVisibility = async (posts, currentUserId, userServiceUrl, aut
     const filteredPosts = [];
     
     for (const post of posts) {
+        // Always allow if current user is the author
+        if (post.author?.toString?.() === currentUserId) {
+            filteredPosts.push(post);
+            continue;
+        }
+
         if (post.visibility === 'public') {
             filteredPosts.push(post);
-        } else if (post.visibility === 'private') {
-            if (post.author === currentUserId) {
-                filteredPosts.push(post);
-            }
         } else if (post.visibility === 'followers') {
-            if (post.author === currentUserId) {
-                filteredPosts.push(post);
-            } else {
-                try {
-                    const followerResponse = await axios.get(`${userServiceUrl}/${post.author}/is-following`, {
-                        headers: { 
-                            'Authorization': authToken,
-                            'Content-Type': 'application/json'
-                        },
-                        timeout: 5000
-                    });
-                    if (followerResponse.data.isFollowing) {
-                        filteredPosts.push(post);
-                    }
-                } catch (error) {
-                    console.error('Error checking if author follows user:', error);
+            try {
+                const followerResponse = await axios.get(`${userServiceUrl}/${post.author}/is-following`, {
+                    headers: { 
+                        'Authorization': authToken,
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: 5000
+                });
+                if (followerResponse.data.isFollowing) {
+                    filteredPosts.push(post);
                 }
+            } catch (error) {
+                console.error('Error checking if author follows user:', error);
             }
         }
+        // Do not push private posts if not the author
     }
     
     return filteredPosts;
@@ -351,6 +355,23 @@ const searchPostsByTags = async (req, res) => {
     }
 };
 
+const deleteAllUserPosts = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+
+        if (!userId) {
+            return res.status(401).json({ error: 'Unauthorized: user not authenticated' });
+        }
+
+        // Delete all posts by the user
+        await Post.deleteMany({ author: userId });
+
+        res.status(200).json({ message: 'All user posts deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting all user posts:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
 
 export {
     publishPost,
@@ -358,5 +379,6 @@ export {
     updatePost,
     deletePost,
     updatePostLikes,
-    searchPostsByTags,
+    deleteAllUserPosts,
+    searchPostsByTags
 };
