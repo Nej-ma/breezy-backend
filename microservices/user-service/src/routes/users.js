@@ -8,15 +8,20 @@ const router = express.Router();
 router.get('/', authMiddleware, controllers.getUsers);
 router.get('/search', authMiddleware, controllers.searchUsers);
 router.get('/username/:username', authMiddleware, controllers.getUserByUsername);
-
 router.get('/id/:userId', authMiddleware, controllers.getUserById);
 
 // Internal service routes (appelées par d'autres microservices)
 router.post('/create-profile', controllers.createUserProfile);
+router.post('/sync-auth-data', controllers.syncUserAuthData);
+
+// Legacy routes (redirect to Auth Service)
+router.post('/', controllers.createAccount);
+router.post("/activate/:token", controllers.validateEmail);
+
+// Protected routes (authentication required)
 router.get('/profile', authMiddleware, controllers.getCurrentUserProfile);
 router.put('/profile', authMiddleware, controllers.updateUserProfile);
 router.delete('/profile/:id', authMiddleware, controllers.deleteUserProfile);
-
 
 /**
  * @swagger
@@ -69,7 +74,6 @@ router.delete('/profile/:id', authMiddleware, controllers.deleteUserProfile);
  *       404:
  *         description: No user profiles found
  */
-
 
 /**
  * @swagger
@@ -158,7 +162,6 @@ router.delete('/profile/:id', authMiddleware, controllers.deleteUserProfile);
  *         description: Server error
  */
 
-
 /**
  * @swagger
  * /username/{username}:
@@ -207,7 +210,6 @@ router.delete('/profile/:id', authMiddleware, controllers.deleteUserProfile);
  *       404:
  *         description: User profile not found
  */
-
 
 /**
  * @swagger
@@ -258,8 +260,74 @@ router.delete('/profile/:id', authMiddleware, controllers.deleteUserProfile);
  *         description: User profile not found
  */
 
+/**
+ * @swagger
+ * /create-profile:
+ *   post:
+ *     summary: Create a new user profile (Internal service route)
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *               - username
+ *               - displayName
+ *             properties:
+ *               userId:
+ *                 type: string
+ *               username:
+ *                 type: string
+ *               displayName:
+ *                 type: string
+ *               role:
+ *                 type: string
+ *                 enum: [user, moderator, admin]
+ *                 default: user
+ *     responses:
+ *       201:
+ *         description: User profile created successfully
+ *       400:
+ *         description: Missing required fields or profile already exists
+ */
 
-// Protected routes (authentication required)
+/**
+ * @swagger
+ * /sync-auth-data:
+ *   post:
+ *     summary: Synchronize user auth data (Internal service route)
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userId
+ *             properties:
+ *               userId:
+ *                 type: string
+ *               role:
+ *                 type: string
+ *                 enum: [user, moderator, admin]
+ *               isSuspended:
+ *                 type: boolean
+ *               suspendedUntil:
+ *                 type: string
+ *                 format: date-time
+ *     responses:
+ *       200:
+ *         description: User auth data synchronized successfully
+ *       400:
+ *         description: Missing required field userId
+ *       404:
+ *         description: User profile not found
+ */
+
 /**
  * @swagger
  * /profile:
@@ -274,7 +342,6 @@ router.delete('/profile/:id', authMiddleware, controllers.deleteUserProfile);
  *       401:
  *         description: Unauthorized
  */
-
 
 /**
  * @swagger

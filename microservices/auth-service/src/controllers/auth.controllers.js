@@ -5,6 +5,7 @@ import User from '../models/User.js';
 import * as emailService from '../services/email.js';
 import { ROLES, isValidRole, canModifyUser } from '../utils/roles.js';
 import { validatePassword } from '../utils/passwordValidator.js';
+import { syncUserRole, syncUserSuspension } from '../services/userSync.js';
 
 // Générer les tokens JWT
 const generateTokens = (userId, role) => {
@@ -244,10 +245,11 @@ const createUser = async (req, res) => {
     // Créer le profil utilisateur dans le User Service
     try {
       const userServiceUrl = process.env.USER_SERVICE_URL || 'http://user-service:3002';
-      await axios.post(`${userServiceUrl}/create-profile`, {
+      await axios.post(`${userServiceUrl}/api/users/create-profile`, {
         userId: newUser._id.toString(),
         username: newUser.username,
-        displayName: newUser.displayName
+        displayName: newUser.displayName,
+        role: newUser.role // Inclure le rôle par défaut
       }, {
         timeout: 5000,
         headers: { 'Content-Type': 'application/json' }
@@ -447,6 +449,9 @@ const updateUserRole = async (req, res) => {
     user.role = role;
     await user.save();
 
+    // Synchroniser avec le user-service
+    await syncUserRole(user._id.toString(), role);
+
     res.status(200).json({
       message: 'User role updated successfully',
       user: {
@@ -498,6 +503,9 @@ const suspendUser = async (req, res) => {
     user.suspendedUntil = suspendedUntil;
     await user.save();
 
+    // Synchroniser avec le user-service
+    await syncUserSuspension(user._id.toString(), true, suspendedUntil);
+
     res.status(200).json({
       message: 'User suspended successfully',
       user: {
@@ -531,6 +539,9 @@ const unsuspendUser = async (req, res) => {
     user.isSuspended = false;
     user.suspendedUntil = null;
     await user.save();
+
+    // Synchroniser avec le user-service
+    await syncUserSuspension(user._id.toString(), false, null);
 
     res.status(200).json({
       message: 'User unsuspended successfully',
