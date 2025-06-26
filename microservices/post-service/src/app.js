@@ -48,10 +48,10 @@ app.use(helmet());
 
 // CORS géré par Traefik - pas besoin de configuration ici
 
-// Rate limiting
+// Rate limiting - Configuration très permissive pour éviter les blocages
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 5 * 1000, // 5 secondes
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 1000 // 1000 requêtes par 5 secondes (très permissif)
 });
 app.use(limiter);
 
