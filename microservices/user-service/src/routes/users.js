@@ -4,6 +4,20 @@ import authMiddleware from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
+// Public routes (no authentication required)
+router.get('/', authMiddleware, controllers.getUsers);
+router.get('/search', authMiddleware, controllers.searchUsers);
+router.get('/username/:username', authMiddleware, controllers.getUserByUsername);
+
+router.get('/id/:userId', authMiddleware, controllers.getUserById);
+
+// Internal service routes (appelées par d'autres microservices)
+router.post('/create-profile', controllers.createUserProfile);
+router.get('/profile', authMiddleware, controllers.getCurrentUserProfile);
+router.put('/profile', authMiddleware, controllers.updateUserProfile);
+router.delete('/profile/:id', authMiddleware, controllers.deleteUserProfile);
+
+
 /**
  * @swagger
  * components:
@@ -17,18 +31,6 @@ const router = express.Router();
  *   name: Users
  *   description: API for user profiles management
  */
-// Public routes (no authentication required)
-router.get('/', authMiddleware, controllers.getUsers);
-router.get('/search', authMiddleware, controllers.searchUsers);
-router.get('/username/:username', authMiddleware, controllers.getUserByUsername);
-
-router.get('/id/:userId', authMiddleware, controllers.getUserById);
-
-// Internal service routes (appelées par d'autres microservices)
-router.post('/create-profile', controllers.createUserProfile);
-router.get('/profile', authMiddleware, controllers.getCurrentUserProfile);
-router.put('/profile', authMiddleware, controllers.updateUserProfile);
-router.delete('/profile/:id', authMiddleware, controllers.deleteUserProfile);
 
 /**
  * @swagger
