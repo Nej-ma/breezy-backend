@@ -406,6 +406,44 @@ router.post('/send-verification-email', authController.sendVerificationEmail);
  */
 router.post('/validate-token', authController.validateToken);
 
+
+/**
+ * @swagger
+ * /{id}:
+ *   delete:
+ *     summary: Delete user by ID
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID to delete
+ *     responses:
+ *       200:
+ *         description: User deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "User deleted successfully"
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
+ *       403:
+ *         description: Forbidden - Insufficient permissions
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Server error
+ */
+router.delete('/:id', authMiddleware, authController.deletedUser);
+
 // ===== ADMIN ROUTES =====
 /**
  * @swagger

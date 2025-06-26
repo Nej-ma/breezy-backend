@@ -231,6 +231,64 @@ const updateUserProfile = async (req, res) => {
   }
 };
 
+const deleteUserProfile = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (!id) {
+            return res.status(401).json({ error: 'Unauthorized: user not authenticated' });
+        }
+
+        const deletedProfile = await UserProfile.findById(id);
+
+        if (!deletedProfile) {
+            return res.status(404).json({ error: 'User profile not found' });
+        }
+
+        // Only allow if user is deleting their own profile or has moderator/admin role
+        const isSelf = deletedProfile.userId === req.user.id;
+        const isModeratorOrAdmin = req.user.role === 'moderator' || req.user.role === 'admin';
+
+        if (!isSelf && !isModeratorOrAdmin) {
+            return res.status(403).json({ error: 'Forbidden: insufficient permissions' });
+        }
+
+        // Extract the token from the Authorization header
+        const authHeader = req.headers.authorization;
+        const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
+
+       
+        // delete user account in Auth Service
+        try {
+            const authServiceUrl = process.env.AUTH_SERVICE_URL || 'http://auth-service:3001';
+            const response = await fetch(`${authServiceUrl}/${deletedProfile.userId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete user account in Auth Service - ' + response.statusText);
+            }
+
+            // Delete the user profile from User Service
+            await UserProfile.findByIdAndDelete(id);
+
+        } catch (error) {
+            console.error('Error deleting user account in Auth Service:', error);
+            return res.status(500).json({ error: 'Internal server error' });
+
+        }
+
+        res.status(200).json({ message: 'User profile deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting user profile:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
 // export 
 export {
     getUsers,
@@ -241,5 +299,6 @@ export {
     getUserById,
     searchUsers,
     getCurrentUserProfile,
-    updateUserProfile
+    updateUserProfile, 
+    deleteUserProfile
 };

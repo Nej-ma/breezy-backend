@@ -5,6 +5,32 @@ import authMiddleware from '../middleware/auth.middleware.js';
 const router = express.Router();
 
 // Public routes (no authentication required)
+router.get('/', authMiddleware, controllers.getUsers);
+router.get('/search', authMiddleware, controllers.searchUsers);
+router.get('/username/:username', authMiddleware, controllers.getUserByUsername);
+
+router.get('/id/:userId', authMiddleware, controllers.getUserById);
+
+// Internal service routes (appelées par d'autres microservices)
+router.post('/create-profile', controllers.createUserProfile);
+router.get('/profile', authMiddleware, controllers.getCurrentUserProfile);
+router.put('/profile', authMiddleware, controllers.updateUserProfile);
+router.delete('/profile/:id', authMiddleware, controllers.deleteUserProfile);
+
+
+/**
+ * @swagger
+ * components:
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
+ * 
+ * tags:
+ *   name: Users
+ *   description: API for user profiles management
+ */
 
 /**
  * @swagger
@@ -12,6 +38,8 @@ const router = express.Router();
  *   get:
  *     summary: Retrieve a list of user profiles
  *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: A list of user profiles
@@ -41,7 +69,7 @@ const router = express.Router();
  *       404:
  *         description: No user profiles found
  */
-router.get('/', authMiddleware, controllers.getUsers);
+
 
 /**
  * @swagger
@@ -49,6 +77,8 @@ router.get('/', authMiddleware, controllers.getUsers);
  *   get:
  *     summary: Search for users by username or display name
  *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: q
@@ -127,7 +157,7 @@ router.get('/', authMiddleware, controllers.getUsers);
  *       500:
  *         description: Server error
  */
-router.get('/search', authMiddleware, controllers.searchUsers);
+
 
 /**
  * @swagger
@@ -135,6 +165,8 @@ router.get('/search', authMiddleware, controllers.searchUsers);
  *   get:
  *     summary: Retrieve a user profile by username
  *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: username
@@ -175,7 +207,7 @@ router.get('/search', authMiddleware, controllers.searchUsers);
  *       404:
  *         description: User profile not found
  */
-router.get('/username/:username', authMiddleware, controllers.getUserByUsername);
+
 
 /**
  * @swagger
@@ -183,6 +215,8 @@ router.get('/username/:username', authMiddleware, controllers.getUserByUsername)
  *   get:
  *     summary: Retrieve a user profile by user ID
  *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: userId
@@ -223,14 +257,7 @@ router.get('/username/:username', authMiddleware, controllers.getUserByUsername)
  *       404:
  *         description: User profile not found
  */
-router.get('/id/:userId', authMiddleware, controllers.getUserById);
 
-// Internal service routes (appelées par d'autres microservices)
-router.post('/create-profile', controllers.createUserProfile);
-
-// Legacy routes (redirect to Auth Service)
-router.post('/', controllers.createAccount);
-router.post("/activate/:token", controllers.validateEmail);
 
 // Protected routes (authentication required)
 /**
@@ -247,7 +274,7 @@ router.post("/activate/:token", controllers.validateEmail);
  *       401:
  *         description: Unauthorized
  */
-router.get('/profile', authMiddleware, controllers.getCurrentUserProfile);
+
 
 /**
  * @swagger
@@ -282,6 +309,29 @@ router.get('/profile', authMiddleware, controllers.getCurrentUserProfile);
  *       401:
  *         description: Unauthorized
  */
-router.put('/profile', authMiddleware, controllers.updateUserProfile);
+
+/**
+ * @swagger
+ * /profile/{id}:
+ *   delete:
+ *     summary: Delete a user profile by user ID
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: The user ID of the profile to delete
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User profile deleted successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: User profile not found
+ */
 
 export default router;
