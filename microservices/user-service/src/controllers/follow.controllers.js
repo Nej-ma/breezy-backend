@@ -36,6 +36,19 @@ const followUser = async (req, res) => {
             return res.status(400).json({ message: 'You cannot follow yourself' });
         }
 
+        // Check if the current user is suspended
+        const currentUser = await User.findOne({ userId: req.user.id });
+        if (currentUser && currentUser.isSuspended) {
+            const suspendedUntil = currentUser.suspendedUntil ? new Date(currentUser.suspendedUntil) : null;
+            if (!suspendedUntil || suspendedUntil > new Date()) {
+                return res.status(403).json({ 
+                    message: 'Vous êtes suspendu et ne pouvez pas suivre d\'autres utilisateurs.',
+                    suspended: true,
+                    suspendedUntil: currentUser.suspendedUntil
+                });
+            }
+        }
+
         const existingFollow = await Follow.findOne({
             follower: req.user.id,
             following: userId
@@ -83,6 +96,19 @@ const unfollowUser = async (req, res) => {
 
         if( req.user.id === userId) {
             return res.status(400).json({ message: 'You cannot unfollow yourself' });
+        }
+
+        // Check if the current user is suspended
+        const currentUser = await User.findOne({ userId: req.user.id });
+        if (currentUser && currentUser.isSuspended) {
+            const suspendedUntil = currentUser.suspendedUntil ? new Date(currentUser.suspendedUntil) : null;
+            if (!suspendedUntil || suspendedUntil > new Date()) {
+                return res.status(403).json({ 
+                    message: 'Vous êtes suspendu et ne pouvez pas modifier vos abonnements.',
+                    suspended: true,
+                    suspendedUntil: currentUser.suspendedUntil
+                });
+            }
         }
 
         const existingFollow = await Follow.findOne({

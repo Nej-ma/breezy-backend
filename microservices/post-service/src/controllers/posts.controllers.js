@@ -11,6 +11,43 @@ const publishPost = async (req, res) => {
             return res.status(400).json({ message: 'Content is required.' });
         }
 
+        // Check if user is suspended
+        try {
+            const userServiceUrl = process.env.USER_SERVICE_URL || 'http://user-service:3002';
+            const authToken = req.headers.authorization;
+           
+            const headers = { 'Content-Type': 'application/json' };
+            if (authToken) {
+                headers['Authorization'] = authToken;
+            }
+           
+            const response = await axios.get(`${userServiceUrl}/id/${userId}`, {
+                headers,
+                timeout: 5000
+            });
+            
+            if (response.status !== 200) {
+                return res.status(404).json({ message: 'User not found.' });
+            }
+            
+            // Check if user is suspended
+            const userData = response.data;
+            if (userData.isSuspended) {
+                const suspendedUntil = userData.suspendedUntil ? new Date(userData.suspendedUntil) : null;
+                if (!suspendedUntil || suspendedUntil > new Date()) {
+                    return res.status(403).json({ 
+                        message: 'Vous êtes suspendu et ne pouvez pas publier de posts.',
+                        suspended: true,
+                        suspendedUntil: userData.suspendedUntil
+                    });
+                }
+            }
+
+        } catch (error) {
+            console.error('Error fetching user:', error);
+            return res.status(500).json({ message: 'Internal server error while checking user.', error: error.message });
+        }
+
         // Create post
         const newPost = new Post({
             author: userId,
@@ -305,10 +342,33 @@ const updatePostLikes = async (req, res) => {
         // Check if user exists
         try {
             const userServiceUrl = process.env.USER_SERVICE_URL || 'http://user-service:3002';
-            const response = await axios.get(`${userServiceUrl}/id/${userId}`);
+            const authToken = req.headers.authorization;
+           
+            const headers = { 'Content-Type': 'application/json' };
+            if (authToken) {
+                headers['Authorization'] = authToken;
+            }
+           
+            const response = await axios.get(`${userServiceUrl}/id/${userId}`, {
+                headers,
+                timeout: 5000
+            });
             
             if (response.status !== 200) {
                 return res.status(404).json({ message: 'User not found.' });
+            }
+            
+            // Check if user is suspended
+            const userData = response.data;
+            if (userData.isSuspended) {
+                const suspendedUntil = userData.suspendedUntil ? new Date(userData.suspendedUntil) : null;
+                if (!suspendedUntil || suspendedUntil > new Date()) {
+                    return res.status(403).json({ 
+                        message: 'Vous êtes suspendu et ne pouvez pas aimer les posts.',
+                        suspended: true,
+                        suspendedUntil: userData.suspendedUntil
+                    });
+                }
             }
 
         } catch (error) {

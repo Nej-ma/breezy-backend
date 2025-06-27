@@ -37,6 +37,18 @@ const publishComment = async (req, res) => {
             timeout: 5000
         });
         
+        // Check if user is suspended
+        if (userData.isSuspended) {
+            const suspendedUntil = userData.suspendedUntil ? new Date(userData.suspendedUntil) : null;
+            if (!suspendedUntil || suspendedUntil > new Date()) {
+                return res.status(403).json({ 
+                    message: 'Vous êtes suspendu et ne pouvez pas publier de commentaires.',
+                    suspended: true,
+                    suspendedUntil: userData.suspendedUntil
+                });
+            }
+        }
+        
         // Create a new comment
         const newComment = new Comment({
             author: userId,
@@ -248,6 +260,19 @@ const updateCommentLikes = async (req, res) => {
            
             if (response.status !== 200) {
                 return res.status(404).json({ message: 'User not found.' });
+            }
+            
+            // Check if user is suspended
+            const userData = response.data;
+            if (userData.isSuspended) {
+                const suspendedUntil = userData.suspendedUntil ? new Date(userData.suspendedUntil) : null;
+                if (!suspendedUntil || suspendedUntil > new Date()) {
+                    return res.status(403).json({ 
+                        message: 'Vous êtes suspendu et ne pouvez pas aimer les commentaires.',
+                        suspended: true,
+                        suspendedUntil: userData.suspendedUntil
+                    });
+                }
             }
         } catch (error) {
             console.error('Error fetching user:', error);
