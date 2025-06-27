@@ -42,6 +42,19 @@ const postSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  // Champs de modération
+  deletedBy: {
+    type: String, // userId de celui qui a supprimé
+    default: null
+  },
+  deletionReason: {
+    type: String,
+    default: null
+  },
+  isModerationAction: {
+    type: Boolean,
+    default: false
+  },
   visibility: {
     type: String,
     enum: ['public', 'followers', 'private'],

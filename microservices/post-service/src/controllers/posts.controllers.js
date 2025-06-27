@@ -11,6 +11,43 @@ const publishPost = async (req, res) => {
             return res.status(400).json({ message: 'Content is required.' });
         }
 
+        // Check if user is suspended
+        try {
+            const userServiceUrl = process.env.USER_SERVICE_URL || 'http://user-service:3002';
+            const authToken = req.headers.authorization;
+           
+            const headers = { 'Content-Type': 'application/json' };
+            if (authToken) {
+                headers['Authorization'] = authToken;
+            }
+           
+            const response = await axios.get(`${userServiceUrl}/id/${userId}`, {
+                headers,
+                timeout: 5000
+            });
+            
+            if (response.status !== 200) {
+                return res.status(404).json({ message: 'User not found.' });
+            }
+            
+            // Check if user is suspended
+            const userData = response.data;
+            if (userData.isSuspended) {
+                const suspendedUntil = userData.suspendedUntil ? new Date(userData.suspendedUntil) : null;
+                if (!suspendedUntil || suspendedUntil > new Date()) {
+                    return res.status(403).json({ 
+                        message: 'Vous êtes suspendu et ne pouvez pas publier de posts.',
+                        suspended: true,
+                        suspendedUntil: userData.suspendedUntil
+                    });
+                }
+            }
+
+        } catch (error) {
+            console.error('Error fetching user:', error);
+            return res.status(500).json({ message: 'Internal server error while checking user.', error: error.message });
+        }
+
         // Create post
         const newPost = new Post({
             author: userId,
@@ -76,8 +113,11 @@ const getPosts = async (req, res) => {
                 return res.status(403).json({ message: 'Access denied. You cannot view this post.' });
             }
 
+            // Enrich single post with user data
+            const enrichedPost = await enrichPostWithUserData(post, userServiceUrl, authToken);
+
             return res.status(200).json({
-                post,
+                post: enrichedPost,
                 filter: 'single',
                 id: id
             });
@@ -92,7 +132,12 @@ const getPosts = async (req, res) => {
                 timeout: 5000
             });
 
-            const followingUserIds = followingResponse.data.map(item => item.following);
+            if (followingResponse.status !== 200) {
+                return res.status(500).json({ message: 'Error fetching following users.' });
+            }
+
+            const followingUserIds = followingResponse.data.users.map(user => user.userId);
+
             const posts = await Post.find({ 
                 author: { $in: followingUserIds }, 
                 isDeleted: false 
@@ -128,43 +173,74 @@ const getPosts = async (req, res) => {
 
     } catch (error) {
         console.error('Error fetching posts:', error);
-        res.status(500).json({ message: 'Internal server error' });
+        res.status(500).json({ message: `Internal server error ${error.message}` });
     }
 }
+
+// Shared function to enrich a single post with user data
+const enrichPostWithUserData = async (post, userServiceUrl, authToken = null) => {
+    try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (authToken) {
+            headers['Authorization'] = authToken;
+        }
+        
+        const { data: userData } = await axios.get(`${userServiceUrl}/id/${post.author}`, {
+            headers,
+            timeout: 5000
+        });
+        return {
+            ...post.toObject(),
+            // Update author data with fresh data from user service
+            authorRole: userData.role || 'user',
+            authorDisplayName: userData.displayName || post.authorDisplayName,
+            authorUsername: userData.username || post.authorUsername,
+            authorProfilePicture: userData.profilePicture || post.authorProfilePicture
+        };
+    } catch (error) {
+        console.error(`Erreur lors de la récupération des données utilisateur pour le post ${post._id}:`, error);
+        // Return original post if user data fetch fails
+        return post.toObject();
+    }
+};
 
 const filterPostsByVisibility = async (posts, currentUserId, userServiceUrl, authToken) => {
     const filteredPosts = [];
     
     for (const post of posts) {
+        // Always allow if current user is the author
+        if (post.author?.toString?.() === currentUserId) {
+            filteredPosts.push(post);
+            continue;
+        }
+
         if (post.visibility === 'public') {
             filteredPosts.push(post);
-        } else if (post.visibility === 'private') {
-            if (post.author === currentUserId) {
-                filteredPosts.push(post);
-            }
         } else if (post.visibility === 'followers') {
-            if (post.author === currentUserId) {
-                filteredPosts.push(post);
-            } else {
-                try {
-                    const followerResponse = await axios.get(`${userServiceUrl}/${post.author}/is-following`, {
-                        headers: { 
-                            'Authorization': authToken,
-                            'Content-Type': 'application/json'
-                        },
-                        timeout: 5000
-                    });
-                    if (followerResponse.data.isFollowing) {
-                        filteredPosts.push(post);
-                    }
-                } catch (error) {
-                    console.error('Error checking if author follows user:', error);
+            try {
+                const followerResponse = await axios.get(`${userServiceUrl}/${post.author}/is-following`, {
+                    headers: { 
+                        'Authorization': authToken,
+                        'Content-Type': 'application/json'
+                    },
+                    timeout: 5000
+                });
+                if (followerResponse.data.isFollowing) {
+                    filteredPosts.push(post);
                 }
+            } catch (error) {
+                console.error('Error checking if author follows user:', error);
             }
         }
+        // Do not push private posts if not the author
     }
     
-    return filteredPosts;
+    // Enrich posts with updated user data (including roles)
+    const enrichedPosts = await Promise.all(
+        filteredPosts.map(post => enrichPostWithUserData(post, userServiceUrl, authToken))
+    );
+    
+    return enrichedPosts;
 };
 
 
@@ -209,20 +285,44 @@ const updatePost = async (req, res) => {
 const deletePost = async (req, res) => {
     try {
         const postId = req.params.id;
+        const { moderatorAction, reason } = req.body || {};
 
         const post = await Post.findById(postId);
         if (!post) {
             return res.status(404).json({ message: 'Post not found.' });
         }
-        if (post.author.toString() !== req.user.userId) {
+
+        // Vérifier les permissions de suppression
+        const isAuthor = post.author.toString() === req.user.userId;
+        const isModerator = req.user.role === 'moderator' || req.user.role === 'admin';
+        
+        if (!isAuthor && !isModerator) {
             return res.status(403).json({ message: 'You are not authorized to delete this post.' });
-        } 
+        }
+
+        // Si c'est une action de modération, logguer l'action
+        if (moderatorAction && isModerator && !isAuthor) {
+            console.log(`🔨 Post ${postId} supprimé par modération par ${req.user.userId} (${req.user.role}). Raison: ${reason || 'Non spécifiée'}`);
+        }
     
-        const deletedPost = await Post.findByIdAndUpdate(postId, { isDeleted: true }, { new: true });
+        const deletedPost = await Post.findByIdAndUpdate(postId, { 
+            isDeleted: true,
+            // Optionnel: ajouter des métadonnées de modération
+            ...(moderatorAction && { 
+                deletedBy: req.user.userId,
+                deletionReason: reason,
+                isModerationAction: true 
+            })
+        }, { new: true });
+        
         if (!deletedPost) {
             return res.status(404).json({ message: 'Post not found.' });
         }
-        res.status(200).json({ message: 'Post deleted successfully', post: deletedPost });
+        
+        res.status(200).json({ 
+            message: moderatorAction ? 'Post deleted by moderation' : 'Post deleted successfully', 
+            post: deletedPost 
+        });
     } catch (error) {
         console.error('Error deleting post:', error);
         res.status(500).json({ message: 'Internal server error' });
@@ -242,10 +342,33 @@ const updatePostLikes = async (req, res) => {
         // Check if user exists
         try {
             const userServiceUrl = process.env.USER_SERVICE_URL || 'http://user-service:3002';
-            const response = await axios.get(`${userServiceUrl}/id/${userId}`);
+            const authToken = req.headers.authorization;
+           
+            const headers = { 'Content-Type': 'application/json' };
+            if (authToken) {
+                headers['Authorization'] = authToken;
+            }
+           
+            const response = await axios.get(`${userServiceUrl}/id/${userId}`, {
+                headers,
+                timeout: 5000
+            });
             
             if (response.status !== 200) {
                 return res.status(404).json({ message: 'User not found.' });
+            }
+            
+            // Check if user is suspended
+            const userData = response.data;
+            if (userData.isSuspended) {
+                const suspendedUntil = userData.suspendedUntil ? new Date(userData.suspendedUntil) : null;
+                if (!suspendedUntil || suspendedUntil > new Date()) {
+                    return res.status(403).json({ 
+                        message: 'Vous êtes suspendu et ne pouvez pas aimer les posts.',
+                        suspended: true,
+                        suspendedUntil: userData.suspendedUntil
+                    });
+                }
             }
 
         } catch (error) {
@@ -351,6 +474,23 @@ const searchPostsByTags = async (req, res) => {
     }
 };
 
+const deleteAllUserPosts = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+
+        if (!userId) {
+            return res.status(401).json({ error: 'Unauthorized: user not authenticated' });
+        }
+
+        // Delete all posts by the user
+        await Post.deleteMany({ author: userId });
+
+        res.status(200).json({ message: 'All user posts deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting all user posts:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
 
 export {
     publishPost,
@@ -358,5 +498,6 @@ export {
     updatePost,
     deletePost,
     updatePostLikes,
-    searchPostsByTags,
+    deleteAllUserPosts,
+    searchPostsByTags
 };

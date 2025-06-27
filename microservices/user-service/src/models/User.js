@@ -140,6 +140,20 @@ const userProfileSchema = new mongoose.Schema({  userId: {
     maxLength: 200,
     default: ''
   },
+  // Données synchronisées depuis l'Auth Service
+  role: {
+    type: String,
+    enum: ['user', 'moderator', 'admin'],
+    default: 'user'
+  },
+  isSuspended: {
+    type: Boolean,
+    default: false
+  },
+  suspendedUntil: {
+    type: Date,
+    default: null
+  },
   followersCount: {
     type: Number,
     default: 0

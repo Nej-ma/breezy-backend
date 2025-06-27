@@ -8,7 +8,7 @@ router.post('/comments/:postId', authMiddleware, controllers.publishComment);
 router.put('/comments/:id', authMiddleware, controllers.updateComment);
 router.put('/comments/:id/like', authMiddleware, controllers.updateCommentLikes);
 router.delete('/comments/:id', authMiddleware, controllers.deleteComment);
-
+router.delete('/comments/users/:userId', authMiddleware, controllers.deleteAllUserComments);
 
 
 /**
@@ -179,6 +179,28 @@ router.delete('/comments/:id', authMiddleware, controllers.deleteComment);
  *         description: Invalid input
  *       404:
  *         description: Comment not found
+ */
+
+/**
+ * @swagger
+ * /comments/users/{userId}:
+ *   delete:
+ *     summary: Delete all comments by a user
+ *     tags: [Comments]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The user ID
+ *     responses:
+ *       200:
+ *         description: All user comments deleted successfully
+ *       404:
+ *         description: User not found or no comments to delete
  */
 
 export default router;
