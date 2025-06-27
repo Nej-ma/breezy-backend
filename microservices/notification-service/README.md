@@ -150,7 +150,7 @@ Authorization: Bearer <your-jwt-token>
 ```javascript
 import io from 'socket.io-client';
 
-const socket = io('ws://localhost:8080/api/notifications', {
+const socket = io('ws://api.breezy.website/api/notifications', {
   auth: { token: userJwtToken }
 });
 
@@ -307,7 +307,7 @@ docker run -p 3004:3004 --env-file .env.production breezy-notification-service
 ### Health Monitoring
 ```bash
 # Check service health
-curl http://localhost:8080/api/notifications/health
+curl http://api.breezy.website/api/notifications/health
 
 # Expected response
 {

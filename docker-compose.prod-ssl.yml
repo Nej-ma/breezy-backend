@@ -1,0 +1,375 @@
+services:
+  # =============
+  # TRAEFIK - API GATEWAY avec SSL
+  # =============
+  traefik:
+    image: traefik:v3.4
+    container_name: breezy-traefik-prod
+    restart: unless-stopped
+    command:
+      # API Dashboard sécurisé
+      - "--api=true"
+      - "--api.dashboard=true"
+      # Provider Docker
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      # Provider de fichiers
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+      # Points d'entrée
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      # Certificats SSL automatiques
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      # Redirection HTTP vers HTTPS
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      # Logs
+      - "--log.level=INFO"
+      - "--accesslog=true"
+    ports:
+      - "80:80"      # HTTP (redirection vers HTTPS)
+      - "443:443"    # HTTPS
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./traefik:/etc/traefik/dynamic:ro"
+      - "./traefik/letsencrypt:/letsencrypt"
+      - "./logs/traefik:/var/log/traefik"
+    networks:
+      - breezy-microservices-network
+
+  # =============
+  # DATABASES
+  # =============
+  mongodb-auth:
+    image: mongo:7.0
+    container_name: breezy-mongodb-auth-prod
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_DATABASE=breezy_auth
+    volumes:
+      - mongodb_auth_data:/data/db
+      - ./backups:/backups
+    networks:
+      - breezy-microservices-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  mongodb-user:
+    image: mongo:7.0
+    container_name: breezy-mongodb-user-prod
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_DATABASE=breezy_users
+    volumes:
+      - mongodb_user_data:/data/db
+      - ./backups:/backups
+    networks:
+      - breezy-microservices-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  mongodb-post:
+    image: mongo:7.0
+    container_name: breezy-mongodb-post-prod
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_DATABASE=breezy_posts
+    volumes:
+      - mongodb_post_data:/data/db
+      - ./backups:/backups
+    networks:
+      - breezy-microservices-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  mongodb-notification:
+    image: mongo:7.0
+    container_name: breezy-mongodb-notification-prod
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_DATABASE=breezy_notifications
+    volumes:
+      - mongodb_notification_data:/data/db
+      - ./backups:/backups
+    networks:
+      - breezy-microservices-network    
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # =============
+  # MICROSERVICES
+  # =============
+  auth-service:
+    build:
+      context: ./microservices
+      dockerfile: auth-service/docker/Dockerfile.prod
+    image: breezy-auth-service:latest
+    container_name: breezy-auth-service-prod
+    restart: unless-stopped
+    env_file:
+      - ./.env.prod
+    depends_on:
+      mongodb-auth:
+        condition: service_healthy
+    networks:
+      - breezy-microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth-api.rule=Host(`${API_DOMAIN}`) && PathPrefix(`/api/auth`)"
+      - "traefik.http.routers.auth-api.entrypoints=websecure"
+      - "traefik.http.routers.auth-api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.auth-api.service=auth-service"
+      - "traefik.http.services.auth-service.loadbalancer.server.port=3001"
+      - "traefik.http.middlewares.auth-stripprefix.stripprefix.prefixes=/api/auth"
+      - "traefik.http.routers.auth-api.middlewares=auth-stripprefix,api-chain-ssl@file"
+
+  user-service:
+    build:
+      context: ./microservices
+      dockerfile: user-service/docker/Dockerfile.prod
+    image: breezy-user-service:latest
+    container_name: breezy-user-service-prod
+    restart: unless-stopped
+    env_file:
+      - ./.env.prod
+    depends_on:
+      mongodb-user:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    volumes:
+      - ./uploads/users:/app/uploads
+    networks:
+      - breezy-microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.user-api.rule=Host(`${API_DOMAIN}`) && PathPrefix(`/api/users`)"
+      - "traefik.http.routers.user-api.entrypoints=websecure"
+      - "traefik.http.routers.user-api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.user-api.service=user-service"
+      - "traefik.http.services.user-service.loadbalancer.server.port=3002"
+      - "traefik.http.middlewares.user-stripprefix.stripprefix.prefixes=/api/users"
+      - "traefik.http.routers.user-api.middlewares=user-stripprefix,api-chain-ssl@file"
+
+  post-service:
+    build:
+      context: ./microservices
+      dockerfile: post-service/docker/Dockerfile.prod
+    image: breezy-post-service:latest
+    container_name: breezy-post-service-prod
+    restart: unless-stopped
+    env_file:
+      - ./.env.prod
+    depends_on:
+      mongodb-post:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+    volumes:
+      - ./uploads/posts:/app/uploads
+    networks:
+      - breezy-microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.post-api.rule=Host(`${API_DOMAIN}`) && PathPrefix(`/api/posts`)"
+      - "traefik.http.routers.post-api.entrypoints=websecure"
+      - "traefik.http.routers.post-api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.post-api.service=post-service"
+      - "traefik.http.services.post-service.loadbalancer.server.port=3003"
+      - "traefik.http.middlewares.post-stripprefix.stripprefix.prefixes=/api/posts"
+      - "traefik.http.routers.post-api.middlewares=post-stripprefix,api-chain-ssl@file"
+
+  notification-service:
+    build:
+      context: ./microservices
+      dockerfile: notification-service/docker/Dockerfile.prod
+    image: breezy-notification-service:latest
+    container_name: breezy-notification-service-prod
+    restart: unless-stopped
+    env_file:
+      - ./.env.prod
+    depends_on:
+      mongodb-notification:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    networks:
+      - breezy-microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3004/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.notification-api.rule=Host(`${API_DOMAIN}`) && PathPrefix(`/api/notifications`)"
+      - "traefik.http.routers.notification-api.entrypoints=websecure"
+      - "traefik.http.routers.notification-api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.notification-api.service=notification-service"
+      - "traefik.http.services.notification-service.loadbalancer.server.port=3004"
+      - "traefik.http.middlewares.notification-stripprefix.stripprefix.prefixes=/api/notifications"
+      - "traefik.http.routers.notification-api.middlewares=notification-stripprefix,api-chain-ssl@file"
+
+  # =============
+  # FRONTEND - NEXT.JS
+  # =============
+  frontend:
+    build:
+      context: ../Breezy
+      dockerfile: Dockerfile
+    image: breezy-frontend:latest
+    container_name: breezy-frontend-prod
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=https://api.breezy.website
+      - NEXT_PUBLIC_API_BASE_URL=https://api.breezy.website/api
+      - NEXT_PUBLIC_FRONTEND_URL=https://breezy.website
+      - PORT=3000
+      - SESSION_SECRET=your-super-secret-session-key-that-is-at-least-32-characters-long
+    depends_on:
+      - traefik
+    networks:
+      - breezy-microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    labels:
+      - "traefik.enable=true"
+      # Route principale breezy.website
+      - "traefik.http.routers.frontend.rule=Host(`breezy.website`) || Host(`www.breezy.website`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.frontend.service=frontend"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+      - "traefik.http.routers.frontend.middlewares=web-chain-ssl@file"
+
+  # =============
+  # SWAGGER AGGREGATOR
+  # =============
+  swagger-aggregator:
+    build:
+      context: ./swagger-aggregator
+      dockerfile: Dockerfile
+    image: breezy-swagger-aggregator:latest
+    container_name: breezy-swagger-aggregator-prod
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3005
+      - API_GATEWAY_URL=https://api.breezy.website
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - USER_SERVICE_URL=http://user-service:3002
+      - POST_SERVICE_URL=http://post-service:3003
+      - NOTIFICATION_SERVICE_URL=http://notification-service:3004
+    depends_on:
+      - auth-service
+      - user-service
+      - post-service
+      - notification-service
+    networks:
+      - breezy-microservices-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3005/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+    labels:
+      - "traefik.enable=true"
+      # Route pour docs.breezy.website
+      - "traefik.http.routers.docs.rule=Host(`docs.breezy.website`)"
+      - "traefik.http.routers.docs.entrypoints=websecure"
+      - "traefik.http.routers.docs.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.docs.service=swagger-aggregator"
+      - "traefik.http.services.swagger-aggregator.loadbalancer.server.port=3005"
+      - "traefik.http.routers.docs.middlewares=web-chain-ssl@file"
+
+volumes:
+  mongodb_auth_data:
+    driver: local
+  mongodb_user_data:
+    driver: local
+  mongodb_post_data:
+    driver: local
+  mongodb_notification_data:
+    driver: local
+
+networks:
+  breezy-microservices-network:
+    driver: bridge

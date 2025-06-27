@@ -8,13 +8,17 @@ WORKDIR /app
 RUN apk add --no-cache curl
 
 # Copy package.json and package-lock.json
-COPY post-service/package*.json ./
+COPY auth-service/package*.json ./
 
-# Install only production dependencies
-RUN npm ci --only=production && npm cache clean --force
+# Install dependencies (fallback to npm install if no package-lock.json)
+RUN if [ -f package-lock.json ]; then \
+      npm ci --omit=dev && npm cache clean --force; \
+    else \
+      npm install --omit=dev && npm cache clean --force; \
+    fi
 
 # Copy source code
-COPY post-service/src/ ./src/
+COPY auth-service/src/ ./src/
 
 # Create uploads directory for file storage
 RUN mkdir -p uploads
@@ -30,11 +34,11 @@ RUN chown -R nodeuser:nodejs /app
 USER nodeuser
 
 # Expose port
-EXPOSE 3003
+EXPOSE 3001
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:3003/health || exit 1
+  CMD curl -f http://localhost:3001/health || exit 1
 
 # Start application in production mode
 CMD ["node", "src/app.js"]

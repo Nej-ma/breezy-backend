@@ -24,7 +24,7 @@ const publishComment = async (req, res) => {
             return res.status(404).json({ message: 'Post not found.' });
         }
         
-        const userServiceUrl = process.env.USER_SERVICE_URL || 'http://localhost:8080/api/users';
+        const userServiceUrl = process.env.USER_SERVICE_URL || 'https://api.breezy.website/api/users';
         const authToken = req.headers.authorization;
        
         const headers = { 'Content-Type': 'application/json' };
@@ -93,7 +93,7 @@ const getComment = async (req, res) => {
             .sort({ createdAt: -1 });
         
         // Enrichir les commentaires avec les données utilisateur actualisées
-        const userServiceUrl = process.env.USER_SERVICE_URL || 'http://localhost:8080/api/users';
+        const userServiceUrl = process.env.USER_SERVICE_URL || 'https://api.breezy.website/api/users';
         const authToken = req.headers.authorization;
        
         const enrichedComments = await Promise.all(

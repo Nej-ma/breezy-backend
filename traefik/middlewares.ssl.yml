@@ -1,0 +1,47 @@
+http:
+  middlewares:
+    # Headers de sécurité SSL
+    security-headers-ssl:
+      headers:
+        accessControlAllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - PATCH
+          - OPTIONS        
+        accessControlAllowOriginList:
+          - "https://breezy.website"
+          - "https://www.breezy.website"
+          - "https://docs.breezy.website"
+          - "https://api.breezy.website"
+        accessControlAllowCredentials: true
+        accessControlAllowHeaders:
+          - "Authorization"
+          - "Content-Type"
+          - "X-Requested-With"
+          - "Accept"
+          - "Origin"
+        customResponseHeaders:
+          X-Frame-Options: "DENY"
+          X-Content-Type-Options: "nosniff"
+          X-XSS-Protection: "1; mode=block"
+          Strict-Transport-Security: "max-age=31536000; includeSubDomains"
+        
+    # Compression
+    gzip-compression-ssl:
+      compress: {}
+   
+    # Chaîne pour les API SSL
+    api-chain-ssl:
+      chain:
+        middlewares:
+          - security-headers-ssl
+          - gzip-compression-ssl
+          
+    # Chaîne pour les pages web SSL
+    web-chain-ssl:
+      chain:
+        middlewares:
+          - security-headers-ssl
+          - gzip-compression-ssl
