@@ -4,7 +4,7 @@ import { sendConfirmationEmail } from '../services/email.js';
 // Create user profile (appelé par Auth Service)
 const createUserProfile = async (req, res) => {
     try {
-        const { userId, username, displayName } = req.body;
+        const { userId, username, displayName, role = 'user' } = req.body;
 
         // Validation des champs requis
         if (!userId || !username || !displayName) {
@@ -22,7 +22,8 @@ const createUserProfile = async (req, res) => {
         const newProfile = new UserProfile({ 
             userId,
             username, 
-            displayName
+            displayName,
+            role
         });
         await newProfile.save();
 
@@ -34,7 +35,9 @@ const createUserProfile = async (req, res) => {
                 displayName: newProfile.displayName,
                 bio: newProfile.bio,
                 profilePicture: newProfile.profilePicture,
-                coverPicture: newProfile.coverPicture
+                coverPicture: newProfile.coverPicture,
+                role: newProfile.role,
+                isSuspended: newProfile.isSuspended
             }
         });
     } catch (error) {
@@ -231,6 +234,7 @@ const updateUserProfile = async (req, res) => {
   }
 };
 
+// Supprimer un profil utilisateur
 const deleteUserProfile = async (req, res) => {
     try {
         const { id } = req.params;
@@ -310,6 +314,45 @@ const deleteUserProfile = async (req, res) => {
     }
 };
 
+// Synchroniser les données d'auth (rôle, suspension) avec le profil utilisateur
+const syncUserAuthData = async (req, res) => {
+    try {
+        const { userId, role, isSuspended, suspendedUntil } = req.body;
+
+        // Validation des champs requis
+        if (!userId) {
+            return res.status(400).json({ 
+                error: 'Missing required field: userId' 
+            });
+        }
+
+        // Préparer les champs à synchroniser
+        const updateFields = {};
+        if (role !== undefined) updateFields.role = role;
+        if (isSuspended !== undefined) updateFields.isSuspended = isSuspended;
+        if (suspendedUntil !== undefined) updateFields.suspendedUntil = suspendedUntil;
+        updateFields.lastSyncedAt = new Date();
+
+        const updatedProfile = await UserProfile.findOneAndUpdate(
+            { userId },
+            { $set: updateFields },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedProfile) {
+            return res.status(404).json({ error: 'User profile not found' });
+        }
+
+        res.status(200).json({ 
+            message: 'User auth data synchronized successfully',
+            profile: updatedProfile
+        });
+    } catch (error) {
+        console.error('❌ Erreur synchronisation données auth:', error);
+        res.status(500).json({ error: error.message });
+    }
+};
+
 // export 
 export {
     getUsers,
@@ -321,5 +364,6 @@ export {
     searchUsers,
     getCurrentUserProfile,
     updateUserProfile, 
-    deleteUserProfile
+    deleteUserProfile,
+    syncUserAuthData
 };
