@@ -4,10 +4,13 @@ import { sendConfirmationEmail } from '../services/email.js';
 // Create user profile (appelé par Auth Service)
 const createUserProfile = async (req, res) => {
     try {
+        console.log('📥 Demande de création de profil utilisateur:', req.body);
+        
         const { userId, username, displayName, role = 'user' } = req.body;
 
         // Validation des champs requis
         if (!userId || !username || !displayName) {
+            console.error('❌ Champs manquants:', { userId, username, displayName });
             return res.status(400).json({ 
                 error: 'Missing required fields: userId, username, displayName' 
             });
@@ -16,9 +19,11 @@ const createUserProfile = async (req, res) => {
         // Vérifier si le profil existe déjà
         const existingProfile = await UserProfile.findOne({ userId });
         if (existingProfile) {
+            console.warn('⚠️ Profil utilisateur existe déjà pour userId:', userId);
             return res.status(400).json({ error: 'User profile already exists' });
         }
 
+        console.log('✅ Création du nouveau profil utilisateur...');
         const newProfile = new UserProfile({ 
             userId,
             username, 
@@ -26,6 +31,13 @@ const createUserProfile = async (req, res) => {
             role
         });
         await newProfile.save();
+
+        console.log('✅ Profil utilisateur créé avec succès:', {
+            userId: newProfile.userId,
+            username: newProfile.username,
+            displayName: newProfile.displayName,
+            role: newProfile.role
+        });
 
         res.status(201).json({ 
             message: 'User profile created successfully',
@@ -42,7 +54,8 @@ const createUserProfile = async (req, res) => {
         });
     } catch (error) {
         console.error('❌ Erreur création profil utilisateur:', error);
-        res.status(400).json({ error: error.message });
+        console.error('Error stack:', error.stack);
+        res.status(500).json({ error: 'Internal server error: ' + error.message });
     }
 }
 
