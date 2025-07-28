@@ -1,0 +1,43 @@
+# traefik/middlewares.yml
+http:
+  middlewares:
+    # Headers de sécurité basiques
+    security-headers:
+      headers:
+        accessControlAllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - PATCH
+          - OPTIONS        
+        accessControlAllowOriginList:
+          - "http://localhost:3000"
+          - "https://*.trycloudflare.com"
+          - "https://*.ngrok-free.app"
+        accessControlAllowCredentials: true
+        accessControlAllowHeaders:
+          - "Authorization"
+          - "Content-Type"
+          - "X-Requested-With"
+        customResponseHeaders:
+          X-Frame-Options: "DENY"
+          X-Content-Type-Options: "nosniff"
+
+    # Compression
+    gzip-compression:
+      compress: {}
+    
+    # Chaîne réutilisable pour les API avec stripprefix
+    api-chain:
+      chain:
+        middlewares:
+          - security-headers
+          - gzip-compression
+    
+    # Chaîne réutilisable pour les pages sans stripprefix  
+    web-chain:
+      chain:
+        middlewares:
+          - security-headers
+          - gzip-compression

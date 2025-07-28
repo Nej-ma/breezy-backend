@@ -1,16 +1,63 @@
-{
-  "name": "breezy-backend",
-  "version": "0.0.0",
+﻿{
+  "name": "breezy-microservices",
+  "version": "1.0.0",
+  "description": "Architecture microservices pour Breezy - Plateforme sociale",
+  "type": "module",
   "private": true,
+  "workspaces": [
+    "microservices/auth-service",
+    "microservices/user-service", 
+    "microservices/post-service",
+    "microservices/notification-service",
+    "microservices/api-gateway"
+  ],
   "scripts": {
-    "start": "node ./bin/www"
+    "install-all": "npm install && npm run install:services",
+    "install:services": "npm run install:auth && npm run install:user && npm run install:post && npm run install:notification && npm run install:gateway",
+    "install:auth": "cd microservices/auth-service && npm install",
+    "install:user": "cd microservices/user-service && npm install", 
+    "install:post": "cd microservices/post-service && npm install",
+    "install:notification": "cd microservices/notification-service && npm install",
+    "install:gateway": "cd microservices/api-gateway && npm install",
+    "dev": "concurrently \"npm run dev:auth\" \"npm run dev:user\" \"npm run dev:post\" \"npm run dev:notification\" \"npm run dev:gateway\"",
+    "dev:auth": "cd microservices/auth-service && npm run dev",
+    "dev:user": "cd microservices/user-service && npm run dev",
+    "dev:post": "cd microservices/post-service && npm run dev", 
+    "dev:notification": "cd microservices/notification-service && npm run dev",
+    "dev:gateway": "cd microservices/api-gateway && npm run dev",
+    "start": "concurrently \"npm run start:auth\" \"npm run start:user\" \"npm run start:post\" \"npm run start:notification\" \"npm run start:gateway\"",
+    "start:auth": "cd microservices/auth-service && npm start",
+    "start:user": "cd microservices/user-service && npm start",
+    "start:post": "cd microservices/post-service && npm start",
+    "start:notification": "cd microservices/notification-service && npm start", 
+    "start:gateway": "cd microservices/api-gateway && npm start",
+    "test": "npm run test:auth && npm run test:user && npm run test:post && npm run test:notification && npm run test:gateway",
+    "test:auth": "cd microservices/auth-service && npm test",
+    "test:user": "cd microservices/user-service && npm test",
+    "test:post": "cd microservices/post-service && npm test",
+    "test:notification": "cd microservices/notification-service && npm test",
+    "test:gateway": "cd microservices/api-gateway && npm test",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f"
   },
-  "dependencies": {
-    "cookie-parser": "~1.4.4",
-    "debug": "~2.6.9",
-    "express": "~4.16.1",
-    "http-errors": "~1.6.3",
-    "jade": "~1.11.0",
-    "morgan": "~1.9.1"
-  }
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "keywords": [
+    "microservices",
+    "nodejs", 
+    "express",
+    "mongodb",
+    "social-platform",
+    "breezy"
+  ],
+  "author": "Votre Nom",
+  "license": "MIT"
 }
