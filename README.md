@@ -1,72 +1,72 @@
-﻿# Breezy - Architecture Microservices
+# Breezy - Microservices Architecture
 
-Une plateforme sociale moderne construite avec une architecture microservices.
+A modern social platform built with a microservices architecture.
 
-# LIEN : [breezy api docs](https://docs.breezy.website/docs/)
+# LINK: [breezy api docs](https://docs.breezy.website/docs/)
 
 ## Architecture
 
-Notre application est divisee en 5 microservices **INDEPENDANTS** :
+Our application is divided into 5 **INDEPENDENT** microservices:
 
 ### Auth Service (Port 3001)
-* Authentification et autorisation
-* Gestion des tokens JWT
-* **Validation centralisée des tokens** (endpoint /auth/validate-token)
-* Reset de mot de passe
-* Verification d'email
-* **Base de données:** MongoDB Auth (indépendante)
+* Authentication and authorization
+* JWT token management
+* **Centralized token validation** (endpoint /auth/validate-token)
+* Password reset
+* Email verification
+* **Database:** MongoDB Auth (independent)
 
 ### User Service (Port 3002)
-* Gestion des profils utilisateurs
-* Systeme de suivi (follow/unfollow)
-* Validation des comptes
-* **Base de données:** MongoDB Users (indépendante)
-* **Authentification:** Appels HTTP vers Auth Service pour validation tokens
+* User profile management
+* Follow/unfollow system
+* Account validation
+* **Database:** MongoDB Users (independent)
+* **Authentication:** HTTP calls to Auth Service for token validation
 
 ### Post Service (Port 3003)
-* Creation et gestion des posts
-* Systeme de commentaires
-* Systeme de likes
-* Gestion des tags
-* **Base de données:** MongoDB Posts (indépendante)
-* **Authentification:** Appels HTTP vers Auth Service pour validation tokens
+* Post creation and management
+* Comment system
+* Like system
+* Tag management
+* **Database:** MongoDB Posts (independent)
+* **Authentication:** HTTP calls to Auth Service for token validation
 
 ### Notification Service (Port 3004)
-* Notifications en temps reel
-* Messages prives
-* Alertes systeme
-* **Base de données:** MongoDB Notifications (indépendante)
-* **Authentification:** Appels HTTP vers Auth Service pour validation tokens
-* **Communication:** WebSocket + HTTP vers autres services
+* Real-time notifications
+* Private messages
+* System alerts
+* **Database:** MongoDB Notifications (independent)
+* **Authentication:** HTTP calls to Auth Service for token validation
+* **Communication:** WebSocket + HTTP to other services
 
 ### API Gateway (Port 3000)
-* Point d'entree unique
-* Routage des requetes
-* Authentification centralisee via Auth Service
+* Single entry point
+* Request routing
+* Centralized authentication via Auth Service
 * Rate limiting
-* Documentation Swagger unifiee
+* Unified Swagger documentation
 
-## Principes Microservices Respectés
+## Microservices Principles Respected
 
-### ✅ Indépendance Complète
-- Chaque service a sa propre base de données
-- Chaque service peut être déployé indépendamment
-- **Aucun code partagé** (suppression du dossier shared)
-- **Authentification distribuée** via appels HTTP
+### ✅ Complete Independence
+- Each service has its own database
+- Each service can be deployed independently
+- **No shared code** (removal of shared folder)
+- **Distributed authentication** via HTTP calls
 
-### ✅ Communication Inter-Services
-- Communication via HTTP/REST uniquement
-- Authentification centralisée dans auth-service
-- Validation des tokens via endpoint dédié
-- Pas de dépendances directes entre services
+### ✅ Inter-Service Communication
+- Communication via HTTP/REST only
+- Centralized authentication in auth-service
+- Token validation via dedicated endpoint
+- No direct dependencies between services
 
-### ✅ Sécurité Distribuée
-- Tokens JWT signés et vérifiés par auth-service
-- Validation utilisateur centralisée
-- Cache local optionnel pour performances
-- Gestion d'erreurs résiliente
+### ✅ Distributed Security
+- JWT tokens signed and verified by auth-service
+- Centralized user validation
+- Optional local cache for performance
+- Resilient error handling
 
-## Architecture de Communication
+## Communication Architecture
 
 ```
 Frontend (React/Vue/Angular)
@@ -90,36 +90,39 @@ MongoDB Notifications + WebSocket
 Token Validation via Auth Service
 ```
 
-## Flux d'Authentification
+## Authentication Flow
 
 1. **Login:** Frontend → API Gateway → Auth Service
-2. **Token Generation:** Auth Service génère JWT
-3. **API Calls:** Frontend → API Gateway → Service avec token
+2. **Token Generation:** Auth Service generates JWT
+3. **API Calls:** Frontend → API Gateway → Service with token
 4. **Token Validation:** Service → Auth Service (/auth/validate-token)
-5. **Response:** Auth Service retourne user info ou erreur
+5. **Response:** Auth Service returns user info or error
 
-## Demarrage Rapide
-Pour demarrer l'application, utilisez Docker Compose :
+## Quick Start
+
+To start the application, use Docker Compose:
 
 ```bash
-# Supprimer l'ancien dossier shared
+# Remove the old shared folder
 rm -rf microservices/shared
-
 docker-compose up --build
 ```
 
 ## Tests
-Pour executer les tests, utilisez la commande suivante :
+
+To run tests, use the following command:
+
 ```bash
-# Tests d'un service spécifique
+# Tests for a specific service
 docker exec breezy-auth-service npm test
 docker exec breezy-user-service npm test
 
-# Tests de tous les services
+# Tests for all services
 npm run test
 ```
 
 ## Monitoring
-- Health checks: `GET /health` sur chaque service
-- Status global: `GET http://localhost:8080/
+
+- Health checks: `GET /health` on each service
+- Global status: `GET http://localhost:8080/`
 - Documentation: `http://localhost:8080/docs`
