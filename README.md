@@ -2,7 +2,7 @@
 
 A modern social platform built with a microservices architecture.
 
-# LINK: [breezy api docs](https://docs.breezy.website/docs/)
+# LINK: [breezy api docs](https://docs.breezy.website/docs/) WEBSITE IS DOWN 
 
 ## Architecture
 
